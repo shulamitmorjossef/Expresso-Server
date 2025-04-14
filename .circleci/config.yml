@@ -30,3 +30,16 @@ workflows:
     # - deploy:
     #     requires:
     #       - test-node
+
+jobs: 
+  build-test:
+    executor: 
+      name: node/default
+    steps: 
+      - checkout
+      - run: 
+          name: install dependancies 
+          command: npm install
+      - run: 
+          name: Run tests
+          command: npm test
