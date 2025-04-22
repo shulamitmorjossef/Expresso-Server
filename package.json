@@ -1,6 +1,7 @@
 {
   "name": "exspresso-server",
   "version": "1.0.0",
+  "type": "module",
   "description": "Expresso server",
   "homepage": "https://github.com/shulamitmorjossef/Exspresso-Server#readme",
   "bugs": {
