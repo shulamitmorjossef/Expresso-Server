@@ -1,4 +1,6 @@
 import chai from 'chai';
+const expect = chai.expect;
+
 
 function add(a, b) {
   return a + b;
