@@ -17,7 +17,7 @@
 
   "scripts": {
     "test": "npx mocha tests/*spec.js --color",
-    "start": "node src/index.js"
+    "start": "node src/index.js",
   },
   "dependencies": {
     "express": "^5.1.0"
