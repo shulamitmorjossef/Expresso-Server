@@ -1,5 +1,5 @@
-import chai from 'chai';
-const expect = chai.expect;
+import { expect } from 'chai';
+
 
 
 function add(a, b) {
