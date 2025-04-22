@@ -1,4 +1,4 @@
-const { expect } = require('chai');
+import chai from 'chai';
 
 function add(a, b) {
   return a + b;
