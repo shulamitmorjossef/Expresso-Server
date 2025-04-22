@@ -13,7 +13,6 @@
   },
   "license": "ISC",
   "author": "Shulamit",
-  "type": "commonjs",
   "main": "index.js",
   "scripts": {
     "test": "npx mocha tests/*spec.js --color",
