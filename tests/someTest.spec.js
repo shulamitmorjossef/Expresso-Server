@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 
 
-
 function add(a, b) {
   return a + b;
 }
