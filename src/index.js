@@ -5,7 +5,7 @@ import pool from './data-access/db.js';
 const app = express();
 const port = process.env.PORT;
 
-app.use(express.json()); // כדי ש-POST יוכל לקרוא JSON מה-body
+app.use(express.json()); 
 
 import cors from 'cors';
 app.use(cors());
