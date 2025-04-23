@@ -1,11 +1,14 @@
 import express from 'express';
 import pool from './data-access/db.js'; 
 
+
 const app = express();
 const port = process.env.PORT;
 
 app.use(express.json()); // כדי ש-POST יוכל לקרוא JSON מה-body
 
+import cors from 'cors';
+app.use(cors());
 
 app.get('/', (req, res) => {
   res.send('Hello Shulamit!')
