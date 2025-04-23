@@ -32,8 +32,6 @@ app.post('/users', async (req, res) => {
   if (!username || !password) {
     return res.status(400).send("❌ Missing username or password");
   }
-
-  
   try {
     const result = await pool.query(
       'INSERT INTO users (username, password) VALUES ($1, $2) RETURNING *',
@@ -45,7 +43,7 @@ app.post('/users', async (req, res) => {
     res.status(500).send("❌ Failed to create user");
   }
 });
-
+// 
 app.get('/users', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM users');
@@ -55,6 +53,14 @@ app.get('/users', async (req, res) => {
     res.status(500).send('❌ Failed to fetch users');
   }
 });
+
+
+app.get('/ping', (req, res) => {
+  console.log('Received ping request');  // הוספתי הודעת לוג
+  res.send('pong 8');
+  console.log('Sent pong response');
+});
+
 
 
 app.listen(port, () => {
