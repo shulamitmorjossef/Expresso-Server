@@ -1,19 +1,18 @@
 import express from 'express';
-import pool from './data-access/db.js'; 
-
+import cors from 'cors';
+import pool from './data-access/db.js';
+import aboutRoute from './routes/aboutRoute.js'; // Connecting the router
 
 const app = express();
 const port = process.env.PORT;
 
-app.use(express.json()); 
-
-import cors from 'cors';
+app.use(express.json());
 app.use(cors());
+app.use(aboutRoute); // Using the router
 
 app.get('/', (req, res) => {
-  res.send('Hello Shulamit!')
-})
-
+  res.send('Hello Shulamit!');
+});
 
 app.get('/test-db', async (req, res) => {
   try {
@@ -24,7 +23,6 @@ app.get('/test-db', async (req, res) => {
     res.status(500).send('❌ Failed to connect to DB');
   }
 });
-
 
 app.post('/users', async (req, res) => {
   const { username, password } = req.body;
@@ -43,7 +41,7 @@ app.post('/users', async (req, res) => {
     res.status(500).send("❌ Failed to create user");
   }
 });
-// 
+
 app.get('/users', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM users');
@@ -54,15 +52,14 @@ app.get('/users', async (req, res) => {
   }
 });
 
-
 app.get('/ping', (req, res) => {
-  console.log('Received ping request');  // הוספתי הודעת לוג
+  console.log('Received ping request');
   res.send('pong 8');
   console.log('Sent pong response');
 });
 
-
-
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
-})
+  console.log(`Example app listening on port ${port}`);
+});
+
+export { app };
