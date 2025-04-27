@@ -1,8 +1,8 @@
 import request from 'supertest';
 import { expect } from 'chai';
-import { app } from '../src/index.js';
+// import { app } from '../src/index.js';
 
-describe('GET /about', () => {
+describe('GET /aabout', () => {
   it('should return status 200 and contain expected fields', async function () {
     this.timeout(5000); // נותן לבדיקה 5 שניות לסיים
     const res = await request(app).get('/about');

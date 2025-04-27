@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import pool from './data-access/db.js';
+import { defaults } from 'pg';
 
 const app = express();
 const port = process.env.PORT;
@@ -74,6 +75,6 @@ app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
 
-export { app };
+// export { app };
 
 
