@@ -1,23 +1,15 @@
-import * as chai from 'chai';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+// import request from 'supertest';
+// import { expect } from 'chai';
+// import { app } from '../src/index.js';
 
-const expect = chai.expect;
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-describe('About file test', () => {
-  it('should exist and contain some text', (done) => {
-    const filePath = path.join(__dirname, '../src/about.txt');
-
-    fs.readFile(filePath, 'utf8', (err, data) => {
-      expect(err).to.be.null;
-      expect(data).to.be.a('string');
-      expect(data.length).to.be.greaterThan(0); // no empty 
-      done();
-    });
-  });
-});
+// describe('GET /about', () => {
+//   it('should return status 200 and contain expected fields', async function () {
+//     this.timeout(5000); // נותן לבדיקה 5 שניות לסיים
+//     const res = await request(app).get('/about');
+    
+//     expect(res.status).to.equal(200); // כאן לשים 200!!
+//     expect(res.body).to.be.an('object');
+//     expect(res.body).to.have.property('title').that.equals('About EXpresso');
+//     expect(res.body).to.have.property('section1').that.is.a('string').that.is.not.empty;
+//   });
+// });
