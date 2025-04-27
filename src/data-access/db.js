@@ -17,9 +17,9 @@ pool.connect()
     console.log('Connected to the database successfully!');
   })
   .catch((err) => {
-    console.error('Failed to connect to the database:1111111111111', err);
-    console.error('Error code:22222222222222222', err.code);  // מציג את הקוד של השגיאה
-    console.error('Error stack trace:3333333333333333333', err.stack);  // מציג את עקבות השגיאה
+    console.error('Failed to connect to the database:', err);
+    console.error('Error code:', err.code);  // מציג את הקוד של השגיאה
+    console.error('Error stack trace:', err.stack);  // מציג את עקבות השגיאה
   });
 
 
