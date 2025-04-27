@@ -17,6 +17,8 @@
   "scripts": {
     "test": "npx mocha tests/*spec.js --color",
     "start": "node src/index.js"
+    
+    
   },
   "dependencies": {
     "cors": "^2.8.5",
