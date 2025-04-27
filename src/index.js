@@ -1,23 +1,20 @@
 import express from 'express';
 import cors from 'cors';
 import pool from './data-access/db.js';
-import aboutRoute from './routes/aboutRoute.js'; // אם קיים, תשאירי. אם אין, אפשר למחוק את השורה הזו.
 
 const app = express();
-const port = process.env.PORT || 3000; // הגדרת פורט ברירת מחדל
+const port = process.env.PORT || 3000; 
 
 app.use(express.json());
 app.use(cors());
-// אם יש לך router כמו aboutRoute תשאירי, אם לא - תורידי
-if (aboutRoute) app.use(aboutRoute);
 
-// ברירת מחדל
+
 app.get('/', (req, res) => {
   res.send('Hello Shulamit!');
 });
 
 
-// בדיקת חיבור למסד הנתונים
+
 app.get('/test-db', async (req, res) => {
   try {
     const result = await pool.query('SELECT NOW()');
@@ -28,7 +25,7 @@ app.get('/test-db', async (req, res) => {
   }
 });
 
-// יצירת משתמש חדש
+
 app.post('/users', async (req, res) => {
   const { username, password } = req.body;
 
@@ -47,7 +44,7 @@ app.post('/users', async (req, res) => {
   }
 });
 
-// שליפת כל המשתמשים
+
 app.get('/users', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM users');
@@ -59,11 +56,11 @@ app.get('/users', async (req, res) => {
 });
 
 
-// נקודת קצה להתחברות (LOGIN) עם לוג לטרמינל
+
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
-  // הוספת לוג - תראי בטרמינל אם הקריאה מגיעה ומה התקבל
+  
   console.log('LOGIN REQUEST:', { username, password });
 
   if (!username || !password) {
@@ -88,14 +85,31 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// בדיקת תקשורת (פינג)
+app.get('/about', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM about LIMIT 1');
+    if (result.rows.length > 0) {
+      res.json(result.rows[0]);
+    } else {
+      res.status(404).send('No about content found.');
+    }
+  } catch (err) {
+    console.error('❌ Error fetching about content:', err);
+    res.status(500).send('❌ Failed to fetch about content');
+  }
+});
+
+
+
 app.get('/ping', (req, res) => {
   console.log('Received ping request');
   res.send('pong 8');
   console.log('Sent pong response');
 });
 
-// מאזין לשרת
+
+
+
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
