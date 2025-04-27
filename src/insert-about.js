@@ -13,6 +13,7 @@ const insertAboutData = async () => {
         'EXpresso is more than a project—it’s a hands-on journey in system development, product thinking, teamwork, and user experience design. From concept to code, we worked with passion, precision, and a touch of caffeine to create something we’re proud to share.'
       );
     `);
+    
 
     console.log('✅ About content inserted successfully!');
     process.exit(0);
