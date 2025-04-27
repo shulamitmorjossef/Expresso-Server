@@ -1,6 +1,11 @@
 README.md
 
-"Expresso" is a website designed to sell coffee machines and capsules. The project includes a backend server based on Node.js and Express and a frontend based on React.
+Expresso ☕
+A website for selling coffee machines and capsules, built with:
+
+Backend: Node.js + Express
+
+Frontend: React
 
 Steps to install and run the project:
 
