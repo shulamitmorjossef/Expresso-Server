@@ -14,7 +14,6 @@ const createUsersTable = async () => {
     console.error("❌ Error creating users table:", err);
     throw err;
   }
-  
 };
 
 const createAboutTable = async () => {
