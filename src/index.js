@@ -16,6 +16,7 @@ app.get('/', (req, res) => {
   res.send('Hello Shulamit!');
 });
 
+
 // בדיקת חיבור למסד הנתונים
 app.get('/test-db', async (req, res) => {
   try {
