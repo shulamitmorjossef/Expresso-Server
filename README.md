@@ -2,11 +2,11 @@ README.md
 
 
 Expresso ☕
-- A website for selling coffee machines and capsules, built with:
+A website for selling coffee machines and capsules, built with:
 
-Backend: Node.js + Express
+  - Backend: Node.js + Express
 
-Frontend: React
+  - Frontend: React
 
 Steps to install and run the project:
 
