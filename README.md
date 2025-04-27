@@ -1,7 +1,7 @@
 README.md
 
 Expresso ☕
-A website for selling coffee machines and capsules, built with:
+- A website for selling coffee machines and capsules, built with:
 
 Backend: Node.js + Express
 
