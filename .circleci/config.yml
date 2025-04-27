@@ -12,6 +12,10 @@ jobs:
       - run:
           name: Run tests
           command: npm test --passWithNoTests
+      - run:
+          name: Run ESLint
+          command: npm run lint # נוסיף פה הרצת eslint
+
   deploy:
     # This is an example deploy job, not actually used by the workflow
     docker:
@@ -32,6 +36,9 @@ jobs:
       - run:
           name: Run tests
           command: npm test
+      - run:
+          name: Run ESLint
+          command: npm run lint # גם פה נוסיף הרצת eslint
 workflows:
   build-and-test:
     jobs:
