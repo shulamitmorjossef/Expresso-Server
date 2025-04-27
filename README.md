@@ -1,7 +1,8 @@
 README.md
 
 Expresso ☕
-- A website for selling coffee machines and capsules, built with:
+
+A website for selling coffee machines and capsules, built with:
 
 Backend: Node.js + Express
 
@@ -10,11 +11,12 @@ Frontend: React
 Steps to install and run the project:
 
 1. Install Node.js along with npm:
-- Check if npm is already installed:
-o Open the terminal or cmd and type the command: 'npm -v' to check if it is already installed on your computer.
-- If Node.js and npm are not installed:
-o Go to the official Node.js website and download the installer from the following link: https://nodejs.org/en.
-o Install Node.js, which will also install npm along with it.
+
+If Node.js and npm are not installed:
+- Go to the official Node.js website and download the installer from the following link: https://nodejs.org/en.
+- Install Node.js, which will also install npm along with it.
+
+
 - Make sure the PATH is set correctly by following these steps:
 o Open the Control Panel and click on "System and Security".
 o Click on "System" and then on "Advanced System Settings".
