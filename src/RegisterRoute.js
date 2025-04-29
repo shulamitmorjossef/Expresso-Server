@@ -61,24 +61,12 @@ router.post('/check-phone', async (req, res) => {
   }
 });
 
-// ✅ נתיב לקבלת כל המשתמשים
-router.get('/rusers', async (req, res) => {
-    try {
-      const result = await pool.query('SELECT * FROM users');
-      res.status(200).json(result.rows);
-    } catch (err) {
-      console.error('❌ שגיאה בקבלת כל המשתמשים:', err);
-      res.status(500).send({ message: "❌ שגיאה בקבלת נתוני משתמשים" });
-    }
-  });
-  
-// ✅ נתיב להוספת משתמש ללא בדיקות
 router.post('/add-user', async (req, res) => {
     try {
       const { fullName, username, email, phone, birthday, password, userType, uniqueCode, managerCode } = req.body;
   
       const result = await pool.query(
-        `INSERT INTO rusers (full_name, username, email, phone, birthday, password, user_type, unique_code, manager_code, created_at)
+        `INSERT INTO users (full_name, username, email, phone, birthday, password, user_type, unique_code, manager_code, created_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW()) RETURNING *`,
         [fullName, username, email, phone, birthday, password, userType, uniqueCode, managerCode]
       );

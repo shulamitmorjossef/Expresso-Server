@@ -57,7 +57,6 @@ const createAboutTable = async () => {
 
 const initAllTables = async () => {
   try {
-    await dropTableUser();
     await createUsersTable();
     await createAboutTable();
     // await createRUsersTable();

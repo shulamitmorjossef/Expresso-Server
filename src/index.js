@@ -39,7 +39,7 @@ app.get('/users', async (req, res) => {
   }
 });
 
-
+// ✅ נתיב להוספת משתמש ללא בדיקות
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
   console.log('LOGIN REQUEST:', { username, password });
