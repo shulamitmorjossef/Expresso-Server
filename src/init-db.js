@@ -16,6 +16,30 @@ const createUsersTable = async () => {
   }
 };
 
+const createRUsersTable = async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS rusers (
+        id SERIAL PRIMARY KEY,
+        full_name TEXT,
+        username TEXT UNIQUE NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        phone VARCHAR (20),
+        birthday DATE,
+        password TEXT NOT NULL,
+        user_type TEXT,
+        unique_code TEXT,
+        manager_code TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    console.log("✅ Table 'users' created or already exists.");
+  } catch (err) {
+    console.error("❌ Error creating users table:", err);
+    throw err;
+  }
+};
+
 const createAboutTable = async () => {
   try {
     await pool.query(`
@@ -40,6 +64,7 @@ const initAllTables = async () => {
   try {
     await createUsersTable();
     await createAboutTable();
+    await createRUsersTable();
     console.log("✅ All tables initialized successfully.");
     process.exit(0);
   } catch (err) {

@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import pool from './data-access/db.js';
+import RegisterRoute from './RegisterRoute.js'; // <<< הוספה חדשה כאן!!
+
 
 const app = express();
 const port = process.env.PORT || 3000; 
@@ -9,6 +11,7 @@ app.use(express.json());
 
 app.use(cors());
 
+app.use(RegisterRoute);
 
 app.get('/', (req, res) => {
   res.send('Hello Shulamit!');
