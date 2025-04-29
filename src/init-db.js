@@ -1,25 +1,20 @@
 import pool from './data-access/db.js';
 
+const dropTableUser = async () => {
+  try{
+    await pool.query('DROP TABLE IF EXISTS users;');
+  
+  console.log("✅ Table 'users' dropped.");
+} catch (err) {
+  console.error("❌ Error droping users table:", err);
+  throw err;
+}
+};
+
 const createUsersTable = async () => {
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        username TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL
-      );
-    `);
-    console.log("✅ Table 'users' created or already exists.");
-  } catch (err) {
-    console.error("❌ Error creating users table:", err);
-    throw err;
-  }
-};
-
-const createRUsersTable = async () => {
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS rusers (
         id SERIAL PRIMARY KEY,
         full_name TEXT,
         username TEXT UNIQUE NOT NULL,
@@ -62,9 +57,10 @@ const createAboutTable = async () => {
 
 const initAllTables = async () => {
   try {
+    await dropTableUser();
     await createUsersTable();
     await createAboutTable();
-    await createRUsersTable();
+    // await createRUsersTable();
     console.log("✅ All tables initialized successfully.");
     process.exit(0);
   } catch (err) {

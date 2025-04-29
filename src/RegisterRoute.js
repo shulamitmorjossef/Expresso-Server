@@ -9,9 +9,9 @@ router.post('/register', async (req, res) => {
     const { fullName, username, email, phone, birthday, password, userType, uniqueCode, managerCode } = req.body;
 
     // בדיקות כפילויות
-    const emailCheck = await pool.query('SELECT * FROM rusers WHERE email = $1', [email]);
-    const phoneCheck = await pool.query('SELECT * FROM rusers WHERE phone = $1', [phone]);
-    const usernameCheck = await pool.query('SELECT * FROM rusers WHERE username = $1', [username]);
+    const emailCheck = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    const phoneCheck = await pool.query('SELECT * FROM users WHERE phone = $1', [phone]);
+    const usernameCheck = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
 
     if (emailCheck.rows.length > 0) {
       return res.status(400).json({ message: 'האימייל כבר קיים במערכת' });
@@ -25,7 +25,7 @@ router.post('/register', async (req, res) => {
 
     // הכנסת המשתמש למסד הנתונים
     const result = await pool.query(
-      `INSERT INTO rusers (full_name, username, email, phone, birthday, password, user_type, unique_code, manager_code, created_at)
+      `INSERT INTO users (full_name, username, email, phone, birthday, password, user_type, unique_code, manager_code, created_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW()) RETURNING *`,
       [fullName, username, email, phone, birthday, password, userType, uniqueCode, managerCode]
     );
@@ -41,7 +41,7 @@ router.post('/register', async (req, res) => {
 router.post('/check-email', async (req, res) => {
   try {
     const { email } = req.body;
-    const result = await pool.query('SELECT * FROM rusers WHERE email = $1', [email]);
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     res.json({ exists: result.rows.length > 0 });
   } catch (err) {
     console.error('❌ שגיאה בבדיקת אימייל:', err);
@@ -53,7 +53,7 @@ router.post('/check-email', async (req, res) => {
 router.post('/check-phone', async (req, res) => {
   try {
     const { phone } = req.body;
-    const result = await pool.query('SELECT * FROM rusers WHERE phone = $1', [phone]);
+    const result = await pool.query('SELECT * FROM users WHERE phone = $1', [phone]);
     res.json({ exists: result.rows.length > 0 });
   } catch (err) {
     console.error('❌ שגיאה בבדיקת טלפון:', err);
@@ -64,7 +64,7 @@ router.post('/check-phone', async (req, res) => {
 // ✅ נתיב לקבלת כל המשתמשים
 router.get('/rusers', async (req, res) => {
     try {
-      const result = await pool.query('SELECT * FROM rusers');
+      const result = await pool.query('SELECT * FROM users');
       res.status(200).json(result.rows);
     } catch (err) {
       console.error('❌ שגיאה בקבלת כל המשתמשים:', err);
