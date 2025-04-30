@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import pool from './data-access/db.js';
-import RegisterRoute from './RegisterRoute.js'; // <<< הוספה חדשה כאן!!
+import RegisterRoute from './RegisterRoute.js'; 
 
 
 const app = express();
@@ -17,6 +17,15 @@ app.get('/', (req, res) => {
   res.send('Hello Shulamit!');
 });
 
+app.get('/terms', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM terms LIMIT 1');
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('❌ Error fetching terms:', err);
+    res.status(500).send('Server error');
+  }
+});
 
 app.get('/test-db', async (req, res) => {
   try {
