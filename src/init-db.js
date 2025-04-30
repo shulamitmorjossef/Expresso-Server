@@ -1,15 +1,5 @@
 import pool from './data-access/db.js';
 
-const dropTableUser = async () => {
-  try{
-    await pool.query('DROP TABLE IF EXISTS users;');
-  
-  console.log("✅ Table 'users' dropped.");
-} catch (err) {
-  console.error("❌ Error droping users table:", err);
-  throw err;
-}
-};
 
 const createUsersTable = async () => {
   try {
@@ -55,10 +45,30 @@ const createAboutTable = async () => {
   }
 };
 
+const createCoffeeMachinesTable = async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS coffee_machines (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        color TEXT,
+        capacity INTEGER,
+        price NUMERIC(10, 2),
+        image_path TEXT
+      );
+    `);
+    console.log("✅ Table 'coffee_machines' created or already exists.");
+  } catch (err) {
+    console.error("❌ Error creating coffee_machines table:", err);
+    throw err;
+  }
+};
+
 const initAllTables = async () => {
   try {
     await createUsersTable();
     await createAboutTable();
+    await createCoffeeMachinesTable();
     // await createRUsersTable();
     console.log("✅ All tables initialized successfully.");
     process.exit(0);

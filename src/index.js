@@ -89,6 +89,37 @@ app.get('/ping', (req, res) => {
 });
 
 
+app.post('/add-coffee-machines', async (req, res) => {
+  try {
+    const { name, color, capacity, price, image_path } = req.body;
+
+    const result = await pool.query(
+      `INSERT INTO coffee_machines (name, color, capacity, price, image_path)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [name, color, capacity, price, image_path]
+    );
+
+    res.status(201).json({ message: "☕ Coffee machine added successfully", machine: result.rows[0] });
+  } catch (err) {
+    console.error("❌ Error inserting coffee machine:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.get("/get-coffee-machine/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query("SELECT * FROM coffee_machines WHERE id = $1", [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Machine not found" });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("❌ Error fetching coffee machine:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });

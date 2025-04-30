@@ -1,9 +1,8 @@
 import express from 'express';
-import pool from './data-access/db.js'; // חיבור למסד הנתונים
+import pool from './data-access/db.js'; 
 
 const router = express.Router();
 
-// ✅ נתיב להרשמת משתמש חדש
 router.post('/register', async (req, res) => {
   try {
     const { fullName, username, email, phone, birthday, password, userType, uniqueCode, managerCode } = req.body;
@@ -37,7 +36,6 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// ✅ נתיב לבדוק אם אימייל קיים כבר
 router.post('/check-email', async (req, res) => {
   try {
     const { email } = req.body;
@@ -49,7 +47,6 @@ router.post('/check-email', async (req, res) => {
   }
 });
 
-// ✅ נתיב לבדוק אם טלפון קיים כבר
 router.post('/check-phone', async (req, res) => {
   try {
     const { phone } = req.body;
