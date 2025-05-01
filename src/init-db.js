@@ -138,7 +138,7 @@ const createCouponsTable = async () => {
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS coupons (
-        code TEXT PRIMARY KEY,
+        codename TEXT PRIMARY KEY,
         discount_percent NUMERIC(5, 2) NOT NULL CHECK (discount_percent >= 0 AND discount_percent <= 100)
       );
     `);
