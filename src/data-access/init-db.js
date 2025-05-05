@@ -1,4 +1,4 @@
-import pool from './data-access/db.js';
+import pool from './db.js';
 
 
 const createUsersTable = async () => {
@@ -24,6 +24,7 @@ const createUsersTable = async () => {
     throw err;
   }
 };
+
 const createTermsTable = async () => {
   try {
     await pool.query(`
@@ -82,6 +83,7 @@ const createCoffeeMachinesTable = async () => {
     throw err;
   }
 };
+
 const createCapsulesTable = async () => {
   try {
     await pool.query(`
@@ -101,6 +103,7 @@ const createCapsulesTable = async () => {
     throw err;
   }
 };
+
 const createMilkFrothersTable = async () => {
   try {
     await pool.query(`
@@ -120,6 +123,7 @@ const createMilkFrothersTable = async () => {
     throw err;
   }
 };
+
 const createIngredientsTable = async () => {
   try {
     await pool.query(`
@@ -134,6 +138,7 @@ const createIngredientsTable = async () => {
     throw err;
   }
 };
+
 const createCouponsTable = async () => {
   try {
     await pool.query(`
@@ -148,6 +153,7 @@ const createCouponsTable = async () => {
     throw err;
   }
 };
+
 const createDeliveryDatesTable = async () => {
   try {
     await pool.query(`
@@ -164,6 +170,7 @@ const createDeliveryDatesTable = async () => {
     throw err;
   }
 };
+
 const createOrdersTable = async () => {
   try {
     await pool.query(`
@@ -180,6 +187,7 @@ const createOrdersTable = async () => {
     throw err;
   }
 };
+
 const createOrderedProductsTable = async () => {
   try {
     await pool.query(`
@@ -196,6 +204,7 @@ const createOrderedProductsTable = async () => {
     throw err;
   }
 };
+
 const createShoppingCartTable = async () => {
   try {
     await pool.query(`
@@ -212,7 +221,6 @@ const createShoppingCartTable = async () => {
     throw err;
   }
 };
-
 
 const initAllTables = async () => {
   try {

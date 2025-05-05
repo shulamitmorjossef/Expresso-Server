@@ -1,8 +1,7 @@
-import pool from './data-access/db.js';
+import pool from './db.js';
 
 const insertTermsData = async () => {
   try {
-    // שלב 1: יצירת הטבלה אם לא קיימת
     await pool.query(`
       CREATE TABLE IF NOT EXISTS terms (
         id SERIAL PRIMARY KEY,
@@ -15,7 +14,6 @@ const insertTermsData = async () => {
       );
     `);
 
-    // שלב 2: הכנסת תוכן
     await pool.query(`
       INSERT INTO terms (title, section1, section2, section3, section4, section5)
       VALUES (

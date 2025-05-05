@@ -1,4 +1,4 @@
-import pool from './data-access/db.js';
+import pool from './db.js';
 
 const insertAboutData = async () => {
   try {
