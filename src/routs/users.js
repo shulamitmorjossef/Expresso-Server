@@ -90,7 +90,7 @@ app.post('/add-user', async (req, res) => {
       console.error('Error:', err);
       res.status(500).send({ message: "Error" });
     }
-  });
+ });
   
 // login
 app.post('/login', async (req, res) => {
@@ -108,6 +108,7 @@ app.post('/login', async (req, res) => {
         const user = result.rows[0];
         res.status(200).send({
         message: 'Login successful',
+        username: user.username,
         user_type: user.user_type,
       });
       } else {
@@ -119,9 +120,57 @@ app.post('/login', async (req, res) => {
     }
   });
 
-
-
+app.get('/get-user-details/:username', async (req, res) => {
+    const username = req.params.username;
   
+    try {
+      const result = await pool.query(
+        'SELECT * FROM users WHERE username = $1',
+        [username]
+      );
+  
+      if (result.rows.length === 0) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+  
+      const user = result.rows[0];
+      res.json({ success: true, user });
+      
+    } catch (err) {
+      console.error('Database error:', err);
+      res.status(500).json({ success: false, message: 'Database error' });
+    }
+});
+  
+app.put('/update-user-details/:username', async (req, res) => {
+  const { username } = req.params;
+  const { fullName, email, phone, password } = req.body;
+
+  try {
+    const result = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const updatedResult = await pool.query(
+      `UPDATE users 
+       SET full_name = $1, email = $2, phone = $3, password = $4 
+       WHERE username = $5 RETURNING *`,
+      [fullName || result.rows[0].full_name, email || result.rows[0].email, phone || result.rows[0].phone, password || result.rows[0].password, username]
+    );
+
+    const updatedUser = updatedResult.rows[0];
+    res.status(200).json({ success: true, user: updatedUser });
+
+  } catch (err) {
+    console.error('Error updating user:', err);
+    res.status(500).json({ success: false, message: 'Failed to update user details' });
+  }
+});
+
+
+
 app.post('/delete-user', async (req, res) => {
     try {
       const { username } = req.body;
