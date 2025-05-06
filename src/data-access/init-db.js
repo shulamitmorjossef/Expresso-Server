@@ -13,9 +13,7 @@ const createUsersTable = async () => {
         birthday DATE,
         password TEXT NOT NULL,
         user_type TEXT,
-        unique_code TEXT,
-        manager_code TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        manager_code TEXT
       );
     `);
     console.log("✅ Table 'users' created or already exists.");

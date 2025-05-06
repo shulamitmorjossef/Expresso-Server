@@ -20,32 +20,36 @@ app.post('/register', async (req, res) => {
     try {
       const { fullName, username, email, phone, birthday, password, userType, uniqueCode, managerCode } = req.body;
   
-      // בדיקות כפילויות
+      if (userType === 'manager') {
+        const SECRET_MANAGER_CODE = 'ASSSSAY8'; 
+        if (managerCode !== SECRET_MANAGER_CODE) {
+          return res.status(403).json({ message: 'wrong code' });
+        }
+      }
       const emailCheck = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
       const phoneCheck = await pool.query('SELECT * FROM users WHERE phone = $1', [phone]);
       const usernameCheck = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
   
       if (emailCheck.rows.length > 0) {
-        return res.status(400).json({ message: 'האימייל כבר קיים במערכת' });
+        return res.status(400).json({ message: 'Existing email' });
       }
       if (phoneCheck.rows.length > 0) {
-        return res.status(400).json({ message: 'הטלפון כבר קיים במערכת' });
+        return res.status(400).json({ message: 'Existing phone number' });
       }
       if (usernameCheck.rows.length > 0) {
-        return res.status(400).json({ message: 'שם המשתמש כבר קיים במערכת' });
+        return res.status(400).json({ message: 'Existing username' });
       }
   
-      // הכנסת המשתמש למסד הנתונים
       const result = await pool.query(
-        `INSERT INTO users (full_name, username, email, phone, birthday, password, user_type, unique_code, manager_code, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW()) RETURNING *`,
-        [fullName, username, email, phone, birthday, password, userType, uniqueCode, managerCode]
+        `INSERT INTO users (full_name, username, email, phone, birthday, password, user_type, manager_code)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+        [fullName, username, email, phone, birthday, password, userType, managerCode]
       );
   
-      res.status(201).json({ message: `המשתמש ${result.rows[0].username} נרשם בהצלחה!` });
+      res.status(201).json({ message: `username ${result.rows[0].username} register successfully!` });
     } catch (err) {
-      console.error('❌ שגיאה בהרשמת משתמש:', err);
-      res.status(500).send({ message: "❌ תקלה ביצירת משתמש, נסה שוב מאוחר יותר" });
+      console.error('Error', err);
+      res.status(500).send({ message: "Error" });
     }
   });
   
@@ -76,23 +80,21 @@ app.post('/add-user', async (req, res) => {
       const { fullName, username, email, phone, birthday, password, userType, uniqueCode, managerCode } = req.body;
   
       const result = await pool.query(
-        `INSERT INTO users (full_name, username, email, phone, birthday, password, user_type, unique_code, manager_code, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW()) RETURNING *`,
-        [fullName, username, email, phone, birthday, password, userType, uniqueCode, managerCode]
+        `INSERT INTO users (full_name, username, email, phone, birthday, password, user_type, manager_code)
+         VALUES ($1, $2, $3, $4, $5, $6, $8) RETURNING *`,
+        [fullName, username, email, phone, birthday, password, userType, managerCode]
       );
   
-      res.status(201).json({ message: `👤 משתמש ${result.rows[0].username} נוסף בהצלחה!` });
+      res.status(201).json({ message: `👤 user ${result.rows[0].username} successfully added!` });
     } catch (err) {
-      console.error('❌ שגיאה בהוספת משתמש:', err);
-      res.status(500).send({ message: "❌ שגיאה בהוספת משתמש" });
+      console.error('Error:', err);
+      res.status(500).send({ message: "Error" });
     }
   });
   
-
 // login
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
-    console.log('LOGIN REQUEST:', { username, password });
     if (!username || !password) {
       return res.status(400).send({ message: 'Missing username or password' });
     }
@@ -100,20 +102,52 @@ app.post('/login', async (req, res) => {
       const result = await pool.query(
         'SELECT * FROM users WHERE username = $1 AND password = $2',
         [username, password]
-      );
-      console.log('LOGIN RESULT:', result.rows); // תוספת ללוג
-  
+      );  
       if (result.rows.length > 0) {
-        res.status(200).send({ message: 'Login successful', user: result.rows[0] });
-        console.log(res.message); // תוספת ללוג
+
+
+        const user = result.rows[0];
+        res.status(200).send({
+        message: 'Login successful',
+        user_type: user.user_type,
+        user: {
+          username: user.username,
+          full_name: user.full_name,
+          email: user.email
+        }
+      });
       } else {
         res.status(401).send({ message: 'Invalid username or password' });
-        console.log(res.message); // תוספת ללוג
       }
     } catch (err) {
-      console.error('❌ Error during login:', err);
-      res.status(500).send({ message: '❌ Failed to login' });
+      console.error('Error during login:', err);
+      res.status(500).send({ message: 'Failed to login' });
     }
   });
+
+
+
+  
+app.post('/delete-user', async (req, res) => {
+    try {
+      const { username } = req.body;
+  
+      const result = await pool.query(
+        `DELETE FROM users WHERE username = $1 RETURNING *`,
+        [username]
+      );
+  
+      if (result.rowCount === 0) {
+        return res.status(404).json({ message: "unknown user" });
+      }
+  
+      res.status(200).json({ message: `🗑️ user ${result.rows[0].username} delete successfully` });
+    } catch (err) {
+      console.error('Error:', err);
+      res.status(500).send({ message: "Error" });
+    }
+});
+  
+  
 
 export default app;

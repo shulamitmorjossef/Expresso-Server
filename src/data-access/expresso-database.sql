@@ -31,9 +31,7 @@ CREATE TABLE IF NOT EXISTS users (
   birthday DATE,
   password TEXT NOT NULL,
   user_type TEXT,
-  unique_code TEXT,
-  manager_code TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  manager_code TEXT
 );
 
 CREATE TABLE IF NOT EXISTS coffee_machines (
@@ -124,3 +122,18 @@ VALUES (
   'We are not responsible for delays or issues caused by external factors such as shipping services.',
   'Thank you for choosing Expresso! We are committed to providing an excellent experience.'
 );
+
+INSERT INTO users (
+  id, full_name, username, email, phone, birthday,
+  password, user_type, manager_code
+) VALUES
+(1, 'Shulamit Mor', 'shuli123', 'shuli@example.com', '0501234567', '1998-06-14', '123456', 'regular', ''),
+(2, 'Shulamit Mor Yossef', 'shulamit', 'shulamitmorjossef@gmail.com', '0537705378', '1999-12-14', '123', 'customer', ''),
+(3, 'avish', 'avishag', 'Avishta@ac.sce.ac.il', '0556604424', '2004-04-28', 'fdkjfd3', 'customer', ''),
+(4, '123', '11', '123@cv.com', '11', '1111-11-10', 'A@111111', 'customer', ''),
+(5, 'avishq', 'avishae', 'Avisht@ac.sce.ac.il', '0556605424', '2004-04-28', 'Avishag2004@', 'customer', ''),
+(6, 'shira asaraf', 'shira', 'shiraasaraf120@icloud.com', '0503371162', '2000-01-10', 'Ss110100!!', 'customer', ''),
+(7, 'Yael Pinto', 'yaelp', 'yaelpinto741@gmail.com', '0545663639', '2004-07-18', 'Yp963741@', 'customer', ''),
+(8, 'yty', 'yael9', 'yaelpinto@gmail.com', '0545663637', '8999-07-18', 'Yp963741@', 'customer', ''),
+(9, 'Yael P', 'yael8', 'yaeli@gmail.com', '054566363', '2004-07-18', 'Yp963741@', 'customer', ''),
+(10, 'shulamit', 'general', 'shulamit@gmail.com', '0537705379', '1999-12-14', 'A!123456', 'manager', 'ASSSSAY8');
