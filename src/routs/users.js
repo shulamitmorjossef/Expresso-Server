@@ -105,16 +105,10 @@ app.post('/login', async (req, res) => {
       );  
       if (result.rows.length > 0) {
 
-
         const user = result.rows[0];
         res.status(200).send({
         message: 'Login successful',
         user_type: user.user_type,
-        user: {
-          username: user.username,
-          full_name: user.full_name,
-          email: user.email
-        }
       });
       } else {
         res.status(401).send({ message: 'Invalid username or password' });
