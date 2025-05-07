@@ -151,7 +151,7 @@ app.get('/get-milk-frother/:id', async (req, res) => {
       console.error("Error fetching milk frother:", err);
       res.status(500).json({ message: "Server error" });
     }
-  }o);
+  });
 
 app.get('/get-all-milk-frothers', async (req, res) => {
     try {

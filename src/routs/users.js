@@ -9,8 +9,8 @@ app.get('/users', async (req, res) => {
       const result = await pool.query('SELECT * FROM users');
       res.status(200).json(result.rows);
     } catch (err) {
-      console.error('❌ Error fetching users:', err);
-      res.status(500).send('❌ Failed to fetch users');
+      console.error('Error fetching users:', err);
+      res.status(500).send('Failed to fetch users');
     }
   });
 
