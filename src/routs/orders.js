@@ -120,5 +120,39 @@ app.get('/get-all-ordered-products', async (req, res) => {
     }
   
   });
-
+  app.get('/search-products', async (req, res) => {
+    const { query } = req.query;
+  
+    if (!query || query.trim() === '') {
+      return res.status(400).json({ error: "Missing search term" });
+    }
+  
+    try {
+      const searchQuery = `%${query}%`;
+  
+      const result = await pool.query(`
+        SELECT id, name, price, image_path, 'coffee_machine' AS type
+        FROM coffee_machines
+        WHERE name ILIKE $1
+  
+        UNION ALL
+  
+        SELECT id, name, price, image_path, 'capsule' AS type
+        FROM capsules
+        WHERE name ILIKE $1
+  
+        UNION ALL
+  
+        SELECT id, name, price, image_path, 'milk_frother' AS type
+        FROM milk_frothers
+        WHERE name ILIKE $1
+      `, [searchQuery]);
+  
+      res.status(200).json(result.rows);
+    } catch (err) {
+      console.error("❌ Error searching products:", err);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+  
 export default app;

@@ -216,6 +216,27 @@ app.put('/update-milk-frother/:id', async (req, res) => {
       res.status(500).json({ error: "Server error" });
     }
   });
+  //  Search across all products by name prefix
+app.get('/search-products', async (req, res) => {
+  const { query } = req.query;
+
+  if (!query) return res.status(400).json({ error: 'Missing search query' });
+
+  try {
+    const [coffee, capsules, frothers] = await Promise.all([
+      pool.query(`SELECT *, 'coffee_machine' as type FROM coffee_machines WHERE LOWER(name) LIKE LOWER($1)`, [`${query}%`]),
+      pool.query(`SELECT *, 'capsule' as type FROM capsules WHERE LOWER(name) LIKE LOWER($1)`, [`${query}%`]),
+      pool.query(`SELECT *, 'milk_frother' as type FROM milk_frothers WHERE LOWER(name) LIKE LOWER($1)`, [`${query}%`]),
+    ]);
+
+    const results = [...coffee.rows, ...capsules.rows, ...frothers.rows];
+    res.json(results);
+  } catch (err) {
+    console.error("Error in search:", err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 
 app.delete('/delete-milk-frother/:id', async (req, res) => {
     const { id } = req.params;
