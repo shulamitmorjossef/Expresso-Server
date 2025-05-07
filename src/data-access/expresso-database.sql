@@ -60,7 +60,8 @@ CREATE TABLE IF NOT EXISTS capsules (
   quantity_per_package INTEGER NOT NULL,
   net_weight_grams NUMERIC(10, 2),
   price NUMERIC(10, 2),
-  image_path TEXT
+  image_path TEXT,
+  ingredients TEXT,
 );
 
 CREATE TABLE IF NOT EXISTS ingredients (
