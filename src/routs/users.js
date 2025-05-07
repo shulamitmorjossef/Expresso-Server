@@ -1,5 +1,7 @@
 import express from 'express';
 import pool from '../data-access/db.js'; 
+import { generateRandomPassword } from '../utils/passwordUtils.js';
+import { sendResetEmail } from '../utils/mailer.js';
 
 const app = express.Router();
 
@@ -191,6 +193,31 @@ app.post('/delete-user', async (req, res) => {
     }
 });
   
-  
+app.post('/reset-password', async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ exists: false, message: 'Email not found.' });
+    }
+
+    const newPassword = generateRandomPassword();
+
+    await pool.query('UPDATE users SET password = $1 WHERE email = $2', [newPassword, email]);
+
+
+    await sendResetEmail(email, newPassword);
+
+    
+    res.status(200).json({ exists: true, message: 'New password sent to your email \nIf you did not receive it, please check your spam.' });
+
+  } catch (err) {
+    console.error('❌ Error in reset-password:', err);
+    res.status(500).json({ message: 'Server error while resetting password.' });
+  }
+});
 
 export default app;
