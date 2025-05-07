@@ -40,7 +40,8 @@ CREATE TABLE IF NOT EXISTS coffee_machines (
   color TEXT,
   capacity INTEGER,
   price NUMERIC(10, 2),
-  image_path TEXT
+  image_path TEXT,
+  sum_of INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS milk_frothers (
@@ -50,7 +51,9 @@ CREATE TABLE IF NOT EXISTS milk_frothers (
   frothing_type TEXT,
   capacity INTEGER,
   price NUMERIC(10, 2),
-  image_path TEXT
+  image_path TEXT,
+    sum_of INTEGER DEFAULT 0
+
 );
 
 CREATE TABLE IF NOT EXISTS capsules (
@@ -62,12 +65,10 @@ CREATE TABLE IF NOT EXISTS capsules (
   price NUMERIC(10, 2),
   image_path TEXT,
   ingredients TEXT,
+  sum_of INTEGER DEFAULT 0
+
 );
 
-CREATE TABLE IF NOT EXISTS ingredients (
-  id SERIAL PRIMARY KEY,
-  name TEXT NOT NULL
-);
 
 CREATE TABLE IF NOT EXISTS coupons (
   codename TEXT PRIMARY KEY,
@@ -91,16 +92,35 @@ CREATE TABLE IF NOT EXISTS orders (
 CREATE TABLE IF NOT EXISTS ordered_products (
   order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
   product_id INTEGER NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('coffee_machines', 'milk_frothers', 'capsules')),
+  product_type TEXT NOT NULL CHECK (product_type IN ('coffee_machines', 'milk_frothers', 'capsules')),
   quantity INTEGER NOT NULL CHECK (quantity > 0),
-  PRIMARY KEY (order_id, product_id)
+  PRIMARY KEY (order_id, product_id, product_type),
+
+  CONSTRAINT fk_coffee_machines FOREIGN KEY (product_id) 
+  REFERENCES coffee_machines(id) ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE,
+
+  CONSTRAINT fk_milk_frothers FOREIGN KEY (product_id) 
+  REFERENCES milk_frothers(id) ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE,
+  
+  CONSTRAINT fk_capsules FOREIGN KEY (product_id) 
+  REFERENCES capsules(id) ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE
 );
 
 CREATE TABLE IF NOT EXISTS shopping_cart (
   user_id INTEGER NOT NULL REFERENCES "users"(id) ON DELETE CASCADE,
   product_id INTEGER NOT NULL,
   quantity INTEGER NOT NULL CHECK (quantity > 0),
-  PRIMARY KEY (user_id, product_id)
+  product_type TEXT NOT NULL CHECK (product_type IN ('coffee_machines', 'milk_frothers', 'capsules')),
+  PRIMARY KEY (user_id, product_id, product_type),
+
+  CONSTRAINT fk_coffee_machines FOREIGN KEY (product_id) 
+  REFERENCES coffee_machines(id) ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE,
+
+  CONSTRAINT fk_milk_frothers FOREIGN KEY (product_id) 
+  REFERENCES milk_frothers(id) ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE,
+  
+  CONSTRAINT fk_capsules FOREIGN KEY (product_id) 
+  REFERENCES capsules(id) ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE
 );
 
 
