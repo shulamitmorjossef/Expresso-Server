@@ -34,6 +34,16 @@ app.get("/get-coffee-machine/:id", async (req, res) => {
       res.status(500).json({ message: "Server error" });
     }
   });
+  
+  app.get('/get-all-coffee-machines', async (req, res) => {
+    try {
+      const result = await pool.query('SELECT * FROM coffee_machines');
+      res.status(200).json(result.rows);
+    } catch (err) {
+      console.error('Error fetching users:', err);
+      res.status(500).send('Failed to fetch v');
+    }
+  });
 
   app.put('/update-coffee-machine/:id', async (req, res) => {
     const { id } = req.params;
