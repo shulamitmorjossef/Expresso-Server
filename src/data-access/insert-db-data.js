@@ -1,20 +1,19 @@
 import pool from './db.js';
-const editUsersTable = async () => {
-    try {
 
+const editCapsulesTable = async () => {
+    try {
         await pool.query(`
-            ALTER TABLE users
-            DROP COLUMN IF EXISTS unique_code,
-            DROP COLUMN IF EXISTS created_at;
+            ALTER TABLE capsules
+            ADD COLUMN IF NOT EXISTS ingredients TEXT;
         `);
 
-        console.log('Users editing successfully!');
+        console.log('Capsules table updated successfully!');
         process.exit(0);
     } catch (error) {
-        console.error('Error editing users:', error);
+        console.error('Error editing capsules table:', error);
         process.exit(1);
     }
 };
-    
-editUsersTable();
+
+editCapsulesTable();
     
