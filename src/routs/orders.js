@@ -60,4 +60,65 @@ app.get('/get-all-ordered-products', async (req, res) => {
     }
   });
 
+
+
+
+
+
+
+  app.get('/BestSellers', async (req, res) => {
+    const { startDate, endDate } = req.query;
+  
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: "Missing date range" });
+    }
+  
+    if (new Date(startDate) > new Date(endDate)) {
+      return res.status(400).json({ error: "Invalid date range" });
+    }
+  
+    try {
+      const result = await pool.query(`
+        -- Query for best-selling coffee machines
+        SELECT cm.name, SUM(op.quantity) AS total_sold
+        FROM ordered_products op
+        JOIN orders o ON o.id = op.order_id
+        JOIN coffee_machines cm ON cm.id = op.product_id
+        WHERE o.order_date BETWEEN $1 AND $2
+        GROUP BY cm.name
+  
+        UNION ALL
+  
+        -- Query for best-selling milk frothers
+        SELECT mf.name, SUM(op.quantity) AS total_sold
+        FROM ordered_products op
+        JOIN orders o ON o.id = op.order_id
+        JOIN milk_frothers mf ON mf.id = op.product_id
+        WHERE o.order_date BETWEEN $1 AND $2
+        GROUP BY mf.name
+  
+        UNION ALL
+  
+        -- Query for best-selling capsules
+        SELECT c.name, SUM(op.quantity) AS total_sold
+        FROM ordered_products op
+        JOIN orders o ON o.id = op.order_id
+        JOIN capsules c ON c.id = op.product_id
+        WHERE o.order_date BETWEEN $1 AND $2
+        GROUP BY c.name
+        ORDER BY total_sold DESC
+      `, [startDate, endDate]);
+  
+      if (result.rows.length === 0) {
+        return res.status(200).json({ message: "No data for selected period." });
+      }
+  
+      res.status(200).json(result.rows);
+    } catch (err) {
+      console.error("❌ Error fetching best sellers:", err);  // הוצאת השגיאה המלאה
+      res.status(500).json({ error: "Server error", details: err.stack });  // הוספת פרטי שגיאה מדויקים יותר
+    }
+  
+  });
+
 export default app;
