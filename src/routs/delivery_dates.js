@@ -31,4 +31,25 @@ app.get('/get-all-delivery-dates', async (req, res) => {
     }
   });
 
+
+  app.delete('/remove-delivery-date', async (req, res) => {
+    try {
+        const { day, month, year } = req.body;
+
+        const result = await pool.query(
+            `DELETE FROM delivery_dates WHERE day = $1 AND month = $2 AND year = $3 RETURNING *`,
+            [day, month, year]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: "⚠️ Delivery date not found" });
+        }
+
+        res.status(200).json({ message: "🗑️ Delivery date removed", date: result.rows[0] });
+    } catch (err) {
+        console.error("❌ Error removing delivery date:", err);
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
 export default app;
