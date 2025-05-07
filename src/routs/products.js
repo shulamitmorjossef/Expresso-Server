@@ -35,7 +35,7 @@ app.get("/get-coffee-machine/:id", async (req, res) => {
     }
   });
   
-  app.get('/get-all-coffee-machines', async (req, res) => {
+app.get('/get-all-coffee-machines', async (req, res) => {
     try {
       const result = await pool.query('SELECT * FROM coffee_machines');
       res.status(200).json(result.rows);
@@ -45,7 +45,7 @@ app.get("/get-coffee-machine/:id", async (req, res) => {
     }
   });
 
-  app.put('/update-coffee-machine/:id', async (req, res) => {
+app.put('/update-coffee-machine/:id', async (req, res) => {
     const { id } = req.params;
     const { name, color, capacity, price, image_path } = req.body;
     try {
@@ -62,9 +62,21 @@ app.get("/get-coffee-machine/:id", async (req, res) => {
       res.status(500).json({ error: "Server error" });
     }
   });
+
+app.delete('/delete-coffee-machine/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+      const result = await pool.query("DELETE FROM coffee_machines WHERE id = $1 RETURNING *", [id]);
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: "Machine not found" });
+      }
+      res.json({ message: "Machine deleted", machine: result.rows[0] });
+    } catch (err) {
+      console.error("Error deleting machine:", err);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
   
-
-
 
 
 // Capsule 
@@ -110,7 +122,7 @@ app.get('/get-all-capsule', async (req, res) => {
     }
   });
 
-  app.put('/update-capsule/:id', async (req, res) => {
+app.put('/update-capsule/:id', async (req, res) => {
     const { id } = req.params;
     const { name, flavor, quantity_per_package, net_weight_grams, price, image_path, ingredients } = req.body;
     try {
@@ -124,6 +136,20 @@ app.get('/get-all-capsule', async (req, res) => {
       res.json({ message: "Capsule updated", capsule: result.rows[0] });
     } catch (err) {
       console.error("Error updating capsule:", err);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+
+app.delete('/delete-capsule/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+      const result = await pool.query("DELETE FROM capsules WHERE id = $1 RETURNING *", [id]);
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: "Capsule not found" });
+      }
+      res.json({ message: "Capsule deleted", capsule: result.rows[0] });
+    } catch (err) {
+      console.error("Error deleting capsule:", err);
       res.status(500).json({ error: "Server error" });
     }
   });
@@ -173,7 +199,7 @@ app.get('/get-all-milk-frothers', async (req, res) => {
     }
   });
 
-  app.put('/update-milk-frother/:id', async (req, res) => {
+app.put('/update-milk-frother/:id', async (req, res) => {
     const { id } = req.params;
     const { name, color, frothing_type, capacity, price, image_path } = req.body;
     try {
@@ -187,6 +213,20 @@ app.get('/get-all-milk-frothers', async (req, res) => {
       res.json({ message: "Frother updated", frother: result.rows[0] });
     } catch (err) {
       console.error("Error updating frother:", err);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+
+app.delete('/delete-milk-frother/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+      const result = await pool.query("DELETE FROM milk_frothers WHERE id = $1 RETURNING *", [id]);
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: "Frother not found" });
+      }
+      res.json({ message: "Frother deleted", frother: result.rows[0] });
+    } catch (err) {
+      console.error("Error deleting frother:", err);
       res.status(500).json({ error: "Server error" });
     }
   });

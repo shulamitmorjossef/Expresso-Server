@@ -91,6 +91,7 @@ CREATE TABLE IF NOT EXISTS orders (
 CREATE TABLE IF NOT EXISTS ordered_products (
   order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
   product_id INTEGER NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('coffee_machines', 'milk_frothers', 'capsules')),
   quantity INTEGER NOT NULL CHECK (quantity > 0),
   PRIMARY KEY (order_id, product_id)
 );
