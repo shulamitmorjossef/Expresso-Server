@@ -4,7 +4,7 @@ const editCapsulesTable = async () => {
     try {
         await pool.query(`
             ALTER TABLE capsules
-            ADD COLUMN ingredients TEXT;
+            ADD COLUMN IF NOT EXISTS ingredients TEXT;
         `);
 
         console.log('Capsules table updated successfully!');
