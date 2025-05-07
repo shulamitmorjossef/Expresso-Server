@@ -78,6 +78,20 @@ app.delete('/delete-coffee-machine/:id', async (req, res) => {
   });
   
 
+app.delete('/delete-coffee-machine/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query('DELETE FROM coffee_machines WHERE id = $1 RETURNING *', [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Coffee machine not found' });
+    }
+    res.json({ message: 'Coffee machine deleted successfully', machine: result.rows[0] });
+  } catch (err) {
+    console.error('Error deleting coffee machine:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 
 // Capsule 
 app.post('/add-capsule', async (req, res) => {
