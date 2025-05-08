@@ -3,10 +3,10 @@ import pool from '../data-access/db.js';
 
 const app = express.Router();
 
-
+//TODO: ADD CHECK THAT PRODUCT EXIST
 app.post('/add-to-cart', async (req, res) => {
   const { user_id, product_id, quantity, product_type } = req.body;
-  console.log("📥 Server received:", { user_id, product_id, quantity, product_type });
+  // console.log("📥 Server received:", { user_id, product_id, quantity, product_type });
 
   if (!user_id || !product_id || !quantity || !product_type) {
     return res.status(400).json({ error: 'Missing parameters' });
@@ -19,13 +19,15 @@ app.post('/add-to-cart', async (req, res) => {
     );
 
     if (existing.rows.length > 0) {
-      console.log("🔄 Updating existing item in cart...");
+      // console.log("🔄 Updating existing item in cart...");
       await pool.query(
         'UPDATE shopping_cart SET quantity = quantity + $1 WHERE user_id = $2 AND product_id = $3 AND product_type = $4',
         [quantity, user_id, product_id, product_type]
       );
     } else {
-      console.log("🆕 Inserting new item into cart...");
+      // console.log("🆕 Inserting new item into cart...");
+      // console.log(product_type);
+
       await pool.query(
         'INSERT INTO shopping_cart (user_id, product_id, quantity, product_type) VALUES ($1, $2, $3, $4)',
         [user_id, product_id, quantity, product_type]
