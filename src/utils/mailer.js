@@ -19,4 +19,14 @@ export function sendResetEmail(to, password) {
   
     return transporter.sendMail(mailOptions);
   }
+  export function sendOrderConfirmationEmail(to, orderId) {
+    const mailOptions = {
+      from: 'expressodontreply@gmail.com',
+      to,
+      subject: `🧾 Expresso Order Confirmation #${orderId}`,
+      text: `Hi!\n\nThank you for your order!\nYour order number is: ${orderId}.\n\nWe will process and ship your order as soon as possible.\n\nEnjoy your coffee ☕\n\n⚠️ This is an automatic message. Please do not reply.`
+    };
+  
+    return transporter.sendMail(mailOptions);
+  }
   

@@ -88,6 +88,22 @@ app.put('/update-coffee-machine/:id', async (req, res) => {
     }
   });
 
+  app.put('/update-coffee-machine-stock/:id', async (req, res) => {
+    const { id } = req.params;
+    const { sum_of } = req.body;
+    try {
+      const result = await pool.query(
+        `UPDATE coffee_machines SET sum_of = $1 WHERE id = $2 RETURNING *`,
+        [sum_of, id]
+      );
+      res.json({ message: 'Stock updated', machine: result.rows[0] });
+    } catch (err) {
+      console.error('Error updating coffee machine stock:', err);
+      res.status(500).json({ error: 'Server error' });
+    }
+  });
+  
+
 app.delete('/delete-coffee-machine/:id', async (req, res) => {
     const { id } = req.params;
     try {
@@ -202,6 +218,22 @@ app.put('/update-capsule/:id', async (req, res) => {
     }
   });
 
+  app.put('/update-capsule-stock/:id', async (req, res) => {
+    const { id } = req.params;
+    const { sum_of } = req.body;
+    try {
+      const result = await pool.query(
+        `UPDATE capsules SET sum_of = $1 WHERE id = $2 RETURNING *`,
+        [sum_of, id]
+      );
+      res.json({ message: 'Stock updated', capsule: result.rows[0] });
+    } catch (err) {
+      console.error('Error updating capsule stock:', err);
+      res.status(500).json({ error: 'Server error' });
+    }
+  });
+  
+
 app.delete('/delete-capsule/:id', async (req, res) => {
     const { id } = req.params;
     try {
@@ -278,6 +310,22 @@ app.put('/update-milk-frother/:id', async (req, res) => {
       res.status(500).json({ error: "Server error" });
     }
   });
+
+  app.put('/update-milk-frother-stock/:id', async (req, res) => {
+    const { id } = req.params;
+    const { sum_of } = req.body;
+    try {
+      const result = await pool.query(
+        `UPDATE milk_frothers SET sum_of = $1 WHERE id = $2 RETURNING *`,
+        [sum_of, id]
+      );
+      res.json({ message: 'Stock updated', frother: result.rows[0] });
+    } catch (err) {
+      console.error('Error updating frother stock:', err);
+      res.status(500).json({ error: 'Server error' });
+    }
+  });
+  
   //  Search across all products by name prefix
 app.get('/search-products', async (req, res) => {
   const { query } = req.query;

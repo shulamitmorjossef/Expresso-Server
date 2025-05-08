@@ -44,20 +44,34 @@ app.post('/add-to-cart', async (req, res) => {
 
 
 
-  
+ 
 app.get('/get-cart/:userId', async (req, res) => {
-    const { userId } = req.params;
-    try {
-      const result = await pool.query(
-        `SELECT * FROM shopping_cart WHERE user_id = $1`,
-        [userId]
-      );
-      res.status(200).json(result.rows);
-    } catch (err) {
-      console.error("❌ Error fetching cart:", err);
-      res.status(500).json({ error: "Server error" });
-    }
-  });
+  const { userId } = req.params;
+
+  try {
+    const result = await pool.query(`
+      SELECT 
+        sc.user_id,
+        sc.product_id,
+        sc.quantity,
+        sc.product_type,
+        COALESCE(c.name, m.name, f.name) as name,
+        COALESCE(c.price, m.price, f.price) as price,
+        COALESCE(c.image_path, m.image_path, f.image_path) as image_path
+      FROM shopping_cart sc
+      LEFT JOIN capsules c ON sc.product_type = 'capsules' AND sc.product_id = c.id
+      LEFT JOIN coffee_machines m ON sc.product_type = 'coffee_machines' AND sc.product_id = m.id
+      LEFT JOIN milk_frothers f ON sc.product_type = 'milk_frothers' AND sc.product_id = f.id
+      WHERE sc.user_id = $1
+    `, [userId]);
+
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error("❌ Error fetching cart:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 
 app.get('/get-all-shopping-carts', async (req, res) => {
     try {
@@ -97,5 +111,42 @@ app.get('/shopping-cart-columns', async (req, res) => {
   }
 });
 
+app.delete('/remove-from-cart', async (req, res) => {
+  const { user_id, product_id } = req.body;
+
+  if (!user_id || !product_id) {
+    return res.status(400).json({ error: 'Missing user_id or product_id' });
+  }
+
+  try {
+    await pool.query(
+      'DELETE FROM shopping_cart WHERE user_id = $1 AND product_id = $2',
+      [user_id, product_id]
+    );
+    res.status(200).json({ message: 'Item removed from cart' });
+  } catch (err) {
+    console.error('❌ Error removing from cart:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+app.patch('/update-cart-quantity', async (req, res) => {
+  const { user_id, product_id, product_type, quantity } = req.body;
+  if (!user_id || !product_id || !product_type || quantity < 1) {
+    return res.status(400).json({ error: 'Invalid input' });
+  }
+
+  try {
+    await pool.query(
+      `UPDATE shopping_cart 
+       SET quantity = $1 
+       WHERE user_id = $2 AND product_id = $3 AND product_type = $4`,
+      [quantity, user_id, product_id, product_type]
+    );
+    res.status(200).json({ message: 'Quantity updated' });
+  } catch (err) {
+    console.error('❌ Error updating quantity:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
 export default app;
