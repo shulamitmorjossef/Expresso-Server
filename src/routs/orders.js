@@ -5,22 +5,99 @@ const app = express.Router();
 
 
 // order
-app.post('/add-order', async (req, res) => {
-    try {
-      const { user_id, status, order_date } = req.body;
-  
-      const result = await pool.query(
-        `INSERT INTO orders (user_id, status, order_date)
-         VALUES ($1, $2, $3) RETURNING *`,
-        [user_id, status, order_date]
-      );
-  
-      res.status(201).json({ message: "📦 Order added successfully", order: result.rows[0] });
-    } catch (err) {
-      console.error("❌ Error inserting order:", err);
-      res.status(500).json({ error: "Server error" });
+// app.post('/add-order/:userId', async (req, res) => {
+//   const { userId } = req.params
+//     try {
+//       const result = await pool.query(
+//         `INSERT INTO orders (user_id, status, order_date)
+//          VALUES ($1, $2, $3) RETURNING *`,
+//         [userId, 'pending', CURRENT_DATE]
+        
+//       );
+//       const newOrder = result.rows[0];
+//       const orderId = newOrder.order_id;
+//       const shoopingCardProd=await pool.query()
+   
+//       res.status(201).json({ message: "📦 Order added successfully", order: result.rows[0] });
+//     } catch (err) {
+//       console.error("❌ Error inserting order:", err);
+//       res.status(500).json({ error: "Server error" });
+//     }
+//   });
+
+
+app.post('/confirm-order/:userId', async (req, res) => {
+  const { userId } = req.params;
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    
+    const orderResult = await client.query(
+      `INSERT INTO orders (user_id, status, order_date)
+       VALUES ($1, 'pending', CURRENT_DATE)
+       RETURNING id`,
+      [userId]
+    );
+    const orderId = orderResult.rows[0].id;
+
+   
+    const cartItemsResult = await client.query(
+      `SELECT product_id, product_type, quantity
+       FROM shopping_cart
+       WHERE user_id = $1`,
+      [userId]
+    );
+
+    const cartItems = cartItemsResult.rows;
+
+    if (cartItems.length === 0) {
+      throw new Error("🛒 Cart is empty.");
     }
-  });
+
+    
+    for (const item of cartItems) {
+      const { product_id, product_type, quantity } = item;
+
+      await client.query(
+        `INSERT INTO ordered_products (order_id, product_id, product_type, quantity)
+         VALUES ($1, $2, $3, $4)`,
+        [orderId, product_id, product_type, quantity]
+      );
+
+    
+      const tableName = product_type; 
+      await client.query(
+        `UPDATE ${tableName}
+         SET sum_of = sum_of - $1
+         WHERE id = $2`,
+        [quantity, product_id]
+      );
+    }
+
+    await client.query(
+      `DELETE FROM shopping_cart
+       WHERE user_id = $1`,
+      [userId]
+    );
+
+    await client.query('COMMIT');
+    res.status(201).json({
+      message: 'Order confirmed successfully',
+      orderId,
+      itemsCount: cartItems.length
+    });
+
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error("Error confirming order:", err);
+    res.status(500).json({ error: "Server error during order confirmation" });
+  } finally {
+    client.release();
+  }
+});
+
 
 app.get('/get-all-orders', async (req, res) => {
     try {
@@ -35,12 +112,12 @@ app.get('/get-all-orders', async (req, res) => {
   // ordered-product
 app.post('/add-ordered-product', async (req, res) => {
     try {
-      const { order_id, product_id, quantity } = req.body;
+      const { order_id, product_id,product_type, quantity } = req.body;
   
       const result = await pool.query(
-        `INSERT INTO ordered_products (order_id, product_id, quantity)
-         VALUES ($1, $2, $3) RETURNING *`,
-        [order_id, product_id, quantity]
+        `INSERT INTO ordered_products (order_id, product_id,product_type,quantity)
+         VALUES ($1, $2, $3, $4) RETURNING *`,
+        [order_id, product_id,product_type, quantity]
       );
   
       res.status(201).json({ message: "🛒 Product added to order", orderedProduct: result.rows[0] });
@@ -59,6 +136,15 @@ app.get('/get-all-ordered-products', async (req, res) => {
       res.status(500).json({ error: "Server error" });
     }
   });
+app.delete('/delete-all-orders', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM orders');
+    res.status(200).json({ message: '🗑️ All orders deleted successfully' });
+  } catch (err) {
+    console.error('❌ Error deleting orders:', err);
+    res.status(500).json({ error: 'Server error while deleting orders' });
+  }
+});
 
 
 
@@ -154,5 +240,16 @@ app.get('/get-all-ordered-products', async (req, res) => {
       res.status(500).json({ error: "Server error" });
     }
   });
+
+  app.delete('/delete-all-orders', async (req, res) => {
+    try {
+      await pool.query('DELETE FROM orders');
+      res.status(200).json({ message: '🗑️ All orders deleted successfully' });
+    } catch (err) {
+      console.error('❌ Error deleting orders:', err);
+      res.status(500).json({ error: 'Server error while deleting orders' });
+    }
+  });
+  
   
 export default app;
