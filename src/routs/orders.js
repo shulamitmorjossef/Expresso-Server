@@ -158,9 +158,78 @@ app.delete('/delete-all-orders', async (req, res) => {
 });
 
 
+app.put('/set-status-order/:orderId', async (req, res) => {
+  try {
+      const { orderId } = req.params;
+      const { status } = req.body;
+      
+      const validStatuses = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
+      if (!validStatuses.includes(status)) {
+          return res.status(400).json({ error: 'Invalid status value' });
+      }
+
+      const result = await pool.query(
+          `UPDATE orders SET status = $1 WHERE id = $2 RETURNING *`,
+          [status, orderId]
+      );
+
+      if (result.rows.length === 0) {
+          return res.status(404).json({ error: 'Order not found' });
+      }
+
+      res.status(200).json({ message: 'Order status updated successfully', order: result.rows[0] });
+  } catch (err) {
+      console.error(' Error updating order status:', err);
+      res.status(500).json({ error: 'Server error' });
+  }
+});
 
 
+app.get('/get-order-details/:orderId', async (req, res) => {
+  const { orderId } = req.params;
+  try {
+      // שליפת פרטי ההזמנה
+      const orderResult = await pool.query(
+          `SELECT o.id AS order_id, o.status, o.order_date, u.email
+           FROM orders o
+           JOIN users u ON o.user_id = u.id
+           WHERE o.id = $1`,
+          [orderId]
+      );
 
+      if (orderResult.rows.length === 0) {
+          return res.status(404).json({ error: 'Order not found' });
+      }
+
+      const order = orderResult.rows[0];
+
+      // שליפת המוצרים שהוזמנו
+      const productsResult = await pool.query(
+          `SELECT op.product_id, op.product_type, op.quantity,
+                  COALESCE(cm.name, mf.name, c.name) AS product_name, 
+                  COALESCE(cm.price, mf.price, c.price) AS price
+           FROM ordered_products op
+           LEFT JOIN coffee_machines cm ON op.product_id = cm.id AND op.product_type = 'coffee_machines'
+           LEFT JOIN milk_frothers mf ON op.product_id = mf.id AND op.product_type = 'milk_frothers'
+           LEFT JOIN capsules c ON op.product_id = c.id AND op.product_type = 'capsules'
+           WHERE op.order_id = $1`,
+          [orderId]
+      );
+
+      order.products = productsResult.rows;
+
+      res.status(200).json({
+          orderId: order.order_id,
+          status: order.status,
+          orderDate: order.order_date,
+          email: order.email,
+          products: order.products
+      });
+  } catch (err) {
+      console.error("❌ Error fetching order details:", err);
+      res.status(500).json({ error: 'Server error while fetching order details' });
+  }
+});
 
 
   app.get('/BestSellers', async (req, res) => {

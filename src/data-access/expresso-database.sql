@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS milk_frothers (
   capacity INTEGER,
   price NUMERIC(10, 2),
   image_path TEXT,
-    sum_of INTEGER DEFAULT 0
+  sum_of INTEGER DEFAULT 0
 
 );
 
@@ -87,6 +87,7 @@ CREATE TABLE IF NOT EXISTS orders (
   user_id INTEGER NOT NULL REFERENCES "users"(id) ON DELETE CASCADE,
   status TEXT NOT NULL CHECK (status IN ('pending', 'confirmed', 'shipped', 'delivered', 'cancelled')),
   order_date DATE NOT NULL
+  
 );
 
 CREATE TABLE IF NOT EXISTS ordered_products (
@@ -96,7 +97,7 @@ CREATE TABLE IF NOT EXISTS ordered_products (
   quantity INTEGER NOT NULL CHECK (quantity > 0),
   PRIMARY KEY (order_id, product_id, product_type),
 
-);
+  );
 
 CREATE TABLE IF NOT EXISTS shopping_cart (
   user_id INTEGER NOT NULL REFERENCES "users"(id) ON DELETE CASCADE,
