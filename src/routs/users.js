@@ -11,8 +11,8 @@ app.get('/users', async (req, res) => {
       const result = await pool.query('SELECT * FROM users');
       res.status(200).json(result.rows);
     } catch (err) {
-      console.error('Error fetching users:', err);
-      res.status(500).send('Failed to fetch users');
+      console.error('❌ Error fetching users:', err);
+      res.status(500).send('❌ Failed to fetch users');
     }
   });
 
@@ -109,10 +109,12 @@ app.post('/login', async (req, res) => {
 
         const user = result.rows[0];
         res.status(200).send({
-        message: 'Login successful',
-        username: user.username,
-        user_type: user.user_type,
-      });
+          message: 'Login successful',
+          id: user.id,
+          username: user.username,
+          user_type: user.user_type,
+        });
+        
       } else {
         res.status(401).send({ message: 'Invalid username or password' });
       }
@@ -212,7 +214,7 @@ app.post('/reset-password', async (req, res) => {
     await sendResetEmail(email, newPassword);
 
     
-    res.status(200).json({ exists: true, message: 'New password sent to your email \nIf you did not receive it, please check your spam.' });
+    res.status(200).json({ exists: true, message: 'New password sent to your email.' });
 
   } catch (err) {
     console.error('❌ Error in reset-password:', err);
