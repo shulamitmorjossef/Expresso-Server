@@ -1,5 +1,6 @@
 import express from 'express';
 import pool from '../data-access/db.js'; 
+import { sendOrderConfirmationEmail } from '../utils/mailer.js';
 
 const app = express.Router();
 
@@ -41,6 +42,16 @@ app.post('/confirm-order/:userId', async (req, res) => {
       [userId]
     );
     const orderId = orderResult.rows[0].id;
+    // שליפת כתובת האימייל של המשתמש
+    const emailResult = await pool.query(
+      `SELECT email FROM users WHERE id = $1`,
+      [userId]
+    );
+    const userEmail = emailResult.rows[0]?.email;
+        // שליחת מייל אישור הזמנה
+    if (userEmail) {
+      await sendOrderConfirmationEmail(userEmail, orderId);
+    }
 
    
     const cartItemsResult = await client.query(
