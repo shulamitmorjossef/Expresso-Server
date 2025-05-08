@@ -4,14 +4,11 @@ const editCapsulesTable = async () => {
     try {
         await pool.query(`
 
-            ALTER TABLE coffee_machines
-            ADD COLUMN IF NOT EXISTS sum_of INTEGER DEFAULT 0;
+           ALTER TABLE shopping_cart DROP CONSTRAINT fk_coffee_machines;
+           ALTER TABLE shopping_cart DROP CONSTRAINT fk_milk_frothers;
+           ALTER TABLE shopping_cart DROP CONSTRAINT fk_capsules;
 
-            ALTER TABLE milk_frothers
-            ADD COLUMN IF NOT EXISTS sum_of INTEGER DEFAULT 0;
 
-            ALTER TABLE capsules
-            ADD COLUMN IF NOT EXISTS sum_of INTEGER DEFAULT 0;
         `);
 
         console.log('Capsules table updated successfully!');

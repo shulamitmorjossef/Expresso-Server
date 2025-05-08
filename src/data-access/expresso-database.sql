@@ -96,14 +96,6 @@ CREATE TABLE IF NOT EXISTS ordered_products (
   quantity INTEGER NOT NULL CHECK (quantity > 0),
   PRIMARY KEY (order_id, product_id, product_type),
 
-  CONSTRAINT fk_coffee_machines FOREIGN KEY (product_id) 
-  REFERENCES coffee_machines(id) ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE,
-
-  CONSTRAINT fk_milk_frothers FOREIGN KEY (product_id) 
-  REFERENCES milk_frothers(id) ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE,
-  
-  CONSTRAINT fk_capsules FOREIGN KEY (product_id) 
-  REFERENCES capsules(id) ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE
 );
 
 CREATE TABLE IF NOT EXISTS shopping_cart (
@@ -113,14 +105,6 @@ CREATE TABLE IF NOT EXISTS shopping_cart (
   product_type TEXT NOT NULL CHECK (product_type IN ('coffee_machines', 'milk_frothers', 'capsules')),
   PRIMARY KEY (user_id, product_id, product_type),
 
-  CONSTRAINT fk_coffee_machines FOREIGN KEY (product_id) 
-  REFERENCES coffee_machines(id) ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE,
-
-  CONSTRAINT fk_milk_frothers FOREIGN KEY (product_id) 
-  REFERENCES milk_frothers(id) ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE,
-  
-  CONSTRAINT fk_capsules FOREIGN KEY (product_id) 
-  REFERENCES capsules(id) ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE
 );
 
 
