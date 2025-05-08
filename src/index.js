@@ -9,7 +9,7 @@ import coupons from './routs/coupons.js';
 import deliveryDates from './routs/delivery_dates.js';
 import orders from './routs/orders.js';
 import shoppingCart from './routs/shopping_cart.js';
-
+import statistics from './routs/statistics.js';
 
 
 const app = express();
@@ -28,6 +28,7 @@ app.use(coupons);
 app.use(deliveryDates);
 app.use(orders);
 app.use(shoppingCart);
+app.use(statistics);
 
 app.get('/', (req, res) => {
   res.send('Hello from Expresso!');

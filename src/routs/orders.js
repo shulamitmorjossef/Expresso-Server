@@ -61,11 +61,6 @@ app.get('/get-all-ordered-products', async (req, res) => {
   });
 
 
-
-
-
-
-
   app.get('/BestSellers', async (req, res) => {
     const { startDate, endDate } = req.query;
   
@@ -154,5 +149,6 @@ app.get('/get-all-ordered-products', async (req, res) => {
       res.status(500).json({ error: "Server error" });
     }
   });
+
   
 export default app;
