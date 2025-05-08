@@ -1,25 +1,50 @@
 import express from 'express';
 import pool from '../data-access/db.js'; 
+import multer from 'multer';
 
 const app = express.Router();
+const upload = multer();
+
+app.post('/add-coffee-machines', upload.none(), async (req, res) => {
+  try {
+    console.log("Add coffee request body:", req.body); 
+
+    const { name, color, capacity, price} = req.body;
 
 
-app.post('/add-coffee-machines', async (req, res) => {
-    try {
-      const { name, color, capacity, price, image_path } = req.body;
+    const result = await pool.query(
+      `INSERT INTO coffee_machines (name, color, capacity, price)
+       VALUES ($1, $2, $3, $4) RETURNING *`,
+      [name, color, capacity, price]
+    );
+
+    res.status(201).json({ message: "☕ Coffee machine added successfully", machine: result.rows[0] });
+  } catch (err) {
+    console.error("Error inserting coffee machine:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+
+// app.post('/add-coffee-machines', async (req, res) => {
+//     try {
+//       console.log("Add coffee request body:", req.body); 
+
+//       const { name, color, capacity, price, image_path } = req.body;
+
   
-      const result = await pool.query(
-        `INSERT INTO coffee_machines (name, color, capacity, price, image_path)
-         VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-        [name, color, capacity, price, image_path]
-      );
+//       const result = await pool.query(
+//         `INSERT INTO coffee_machines (name, color, capacity, price, image_path)
+//          VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+//         [name, color, capacity, price, image_path]
+//       );
   
-      res.status(201).json({ message: "☕ Coffee machine added successfully", machine: result.rows[0] });
-    } catch (err) {
-      console.error("Error inserting coffee machine:", err);
-      res.status(500).json({ error: "Server error" });
-    }
-  });
+//       res.status(201).json({ message: "☕ Coffee machine added successfully", machine: result.rows[0] });
+//     } catch (err) {
+//       console.error("Error inserting coffee machine:", err);
+//       res.status(500).json({ error: "Server error" });
+//     }
+//   });
   
 app.get("/get-coffee-machine/:id", async (req, res) => {
     const { id } = req.params;
@@ -94,22 +119,45 @@ app.delete('/delete-coffee-machine/:id', async (req, res) => {
 
 
 // Capsule 
-app.post('/add-capsule', async (req, res) => {
-    try {
-      const { name, flavor, quantity_per_package, net_weight_grams, price, image_path } = req.body;
+// app.post('/add-capsule',  async (req, res) => {
+//     try {
+//       console.log("Add capsule request body:", req.body); 
+
+//       const { name, flavor, quantity_per_package, net_weight_grams, price, ingredients, image_path } = req.body;
   
-      const result = await pool.query(
-        `INSERT INTO capsules (name, flavor, quantity_per_package, net_weight_grams, price, image_path, ingredients)
-         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-        [name, flavor, quantity_per_package, net_weight_grams, price, image_path, ingredients]
-      );
+//       const result = await pool.query(
+//         `INSERT INTO capsules (name, flavor, quantity_per_package, net_weight_grams, price, image_path, ingredients)
+//          VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+//         [name, flavor, quantity_per_package, net_weight_grams, price, image_path, ingredients]
+//       );
+
   
-      res.status(201).json({ message: "Capsule added successfully", capsule: result.rows[0] });
-    } catch (err) {
-      console.error("Error inserting capsule:", err);
-      res.status(500).json({ error: "Server error" });
-    }
-  });
+//       res.status(201).json({ message: "Capsule added successfully", capsule: result.rows[0] });
+//     } catch (err) {
+//       console.error("Error inserting capsule:", err);
+//       res.status(500).json({ error: "Server error" });
+//     }
+//   });
+
+app.post('/add-capsule', upload.none(), async (req, res) => {
+  try {
+    console.log("Add capsule request body:", req.body); 
+
+    const { name, flavor, quantity_per_package, net_weight_grams, price, ingredients } = req.body;
+
+    const result = await pool.query(
+      `INSERT INTO capsules (name, flavor, quantity_per_package, net_weight_grams, price, ingredients)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [name, flavor, quantity_per_package, net_weight_grams, price, ingredients]
+    );
+
+
+    res.status(201).json({ message: "Capsule added successfully", capsule: result.rows[0] });
+  } catch (err) {
+    console.error("Error inserting capsule:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 app.get("/get-capsule/:id", async (req, res) => {
     const { id } = req.params;
