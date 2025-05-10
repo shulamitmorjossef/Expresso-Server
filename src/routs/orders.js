@@ -6,10 +6,8 @@ import { sendOrderConfirmationEmail } from '../utils/mailer.js';
 const router = express.Router();
 router.use(express.json());
 
-/**
- * 1) Confirm order: 
- *    יוצר רשומה בטבלת orders, שולף מה־shopping_cart, מוסיף לשOrderedProducts ועדכון מלאי
- */
+// Confirm order: 
+ 
 router.post('/confirm-order/:userId', async (req, res) => {
   const { userId } = req.params;
   const client = await pool.connect();
@@ -17,7 +15,6 @@ router.post('/confirm-order/:userId', async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    // 1. צור order חדש
     const orderResult = await client.query(
       `INSERT INTO orders (user_id, status, order_date)
          VALUES ($1, 'pending', CURRENT_DATE)
@@ -26,7 +23,6 @@ router.post('/confirm-order/:userId', async (req, res) => {
     );
     const orderId = orderResult.rows[0].id;
 
-    // 2. שלוף מייל משתמש
     const emailRes = await client.query(
       `SELECT email FROM users WHERE id = $1`,
       [userId]
@@ -36,7 +32,6 @@ router.post('/confirm-order/:userId', async (req, res) => {
       await sendOrderConfirmationEmail(userEmail, orderId);
     }
 
-    // 3. שלוף פריטי עגלה
     const cartRes = await client.query(
       `SELECT product_id, product_type, quantity
          FROM shopping_cart
@@ -48,16 +43,13 @@ router.post('/confirm-order/:userId', async (req, res) => {
       throw new Error('🛒 Cart is empty');
     }
 
-    // 4. הוסף ל־ordered_products ועדכן מלאי
     for (const { product_id, product_type, quantity } of cartItems) {
-      // הוספה לטבלת ordered_products
       await client.query(
         `INSERT INTO ordered_products
            (order_id, product_id, product_type, quantity)
          VALUES ($1,$2,$3,$4)`,
         [orderId, product_id, product_type, quantity]
       );
-      // עדכון שדה sum_of בטבלת המוצר הנכון
       await client.query(
         `UPDATE ${product_type}
             SET sum_of = sum_of - $1
@@ -66,7 +58,6 @@ router.post('/confirm-order/:userId', async (req, res) => {
       );
     }
 
-    // 5. רוקן קארט
     await client.query(
       `DELETE FROM shopping_cart WHERE user_id = $1`,
       [userId]
@@ -134,7 +125,6 @@ router.get('/get-all-orders', async (req, res) => {
 router.post('/add-ordered-product', async (req, res) => {
   const { order_id, product_id, product_type, quantity } = req.body;
 
-  // בדיקות ולידציה
   if (!order_id || !product_id || !product_type || !quantity) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
@@ -224,7 +214,6 @@ router.put('/set-status-order/:orderId', async (req, res) => {
 router.get('/get-order-details/:orderId', async (req, res) => {
   const { orderId } = req.params;
   try {
-    // שליפת פרטי order + user email
     const orderRes = await pool.query(
       `SELECT o.id AS order_id, o.status, o.order_date, u.email
          FROM orders o
@@ -237,19 +226,22 @@ router.get('/get-order-details/:orderId', async (req, res) => {
     }
     const order = orderRes.rows[0];
 
-    // שליפת המוצרים
     const productsRes = await pool.query(
-      `SELECT op.product_id, op.product_type, op.quantity,
-              COALESCE(cm.name, mf.name, c.name) AS product_name,
-              COALESCE(cm.price, mf.price, c.price) AS price
-         FROM ordered_products op
-         LEFT JOIN coffee_machines cm 
-           ON op.product_type='coffee_machines' AND cm.id=op.product_id
-         LEFT JOIN milk_frothers mf 
-           ON op.product_type='milk_frothers'   AND mf.id=op.product_id
-         LEFT JOIN capsules c 
-           ON op.product_type='capsules'       AND c.id=op.product_id
-        WHERE op.order_id = $1`,
+      `SELECT 
+         op.product_id, 
+         op.product_type, 
+         op.quantity,
+         COALESCE(cm.name, mf.name, c.name) AS product_name,
+         COALESCE(cm.price, mf.price, c.price) AS price,
+         COALESCE(cm.image_path, mf.image_path, c.image_path) AS image_path
+       FROM ordered_products op
+       LEFT JOIN coffee_machines cm 
+         ON op.product_type = 'coffee_machines' AND cm.id = op.product_id
+       LEFT JOIN milk_frothers mf 
+         ON op.product_type = 'milk_frothers' AND mf.id = op.product_id
+       LEFT JOIN capsules c 
+         ON op.product_type = 'capsules' AND c.id = op.product_id
+       WHERE op.order_id = $1`,
       [orderId]
     );
     order.products = productsRes.rows;
@@ -260,6 +252,7 @@ router.get('/get-order-details/:orderId', async (req, res) => {
     res.status(500).json({ error: 'Server error fetching order details' });
   }
 });
+
 
 
 /**
@@ -328,6 +321,117 @@ router.get('/search-products', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+
+/**
+ * 11) Get orders
+ */
+router.get('/orders/:userId', async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const result = await pool.query(
+      `SELECT id, status, order_date
+       FROM orders
+       WHERE user_id = $1
+       ORDER BY order_date DESC`,
+      [userId]
+    );
+
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error('❌ Error fetching orders:', err);
+    res.status(500).json({ error: 'Failed to fetch orders' });
+  }
+});
+
+router.get('/orders/full/:userId', async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const orders = await pool.query(`
+      SELECT o.id, o.order_date, o.status,
+        COALESCE(SUM(p.price * op.quantity), 0) AS total
+      FROM orders o
+      LEFT JOIN ordered_products op ON o.id = op.order_id
+      LEFT JOIN (
+        SELECT id, price, 'coffee_machines' AS type FROM coffee_machines
+        UNION ALL
+        SELECT id, price, 'milk_frothers' FROM milk_frothers
+        UNION ALL
+        SELECT id, price, 'capsules' FROM capsules
+      ) p ON p.id = op.product_id AND p.type = op.product_type
+      WHERE o.user_id = $1
+      GROUP BY o.id
+      ORDER BY o.order_date DESC
+    `, [userId]);
+
+    res.json(orders.rows);
+  } catch (err) {
+    console.error('❌ Error loading orders with total:', err);
+    res.status(500).json({ error: 'Failed to load orders' });
+  }
+});
+/**
+ * 13) Delete orders
+ */
+router.delete('/cancel-order/:orderId', async (req, res) => {
+  const { orderId } = req.params;
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    
+    const orderCheck = await client.query(
+      `SELECT * FROM orders WHERE id = $1`,
+      [orderId]
+    );
+    if (orderCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    
+    const productsRes = await client.query(
+      `SELECT product_id, product_type, quantity
+       FROM ordered_products
+       WHERE order_id = $1`,
+      [orderId]
+    );
+
+    
+    for (const item of productsRes.rows) {
+      const { product_id, product_type, quantity } = item;
+      await client.query(
+        `UPDATE ${product_type}
+         SET sum_of = sum_of + $1
+         WHERE id = $2`,
+        [quantity, product_id]
+      );
+    }
+
+    const result = await client.query(
+      `UPDATE orders
+       SET status = 'cancelled'
+       WHERE id = $1
+       RETURNING *`,
+      [orderId]
+    );
+
+    await client.query('COMMIT');
+    res.json({ message: 'Order cancelled successfully', order: result.rows[0] });
+
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('❌ Failed to cancel order:', err);
+    res.status(500).json({ error: 'Failed to cancel order' });
+  } finally {
+    client.release();
+  }
+});
+
+
+
 
 
 export default router;
