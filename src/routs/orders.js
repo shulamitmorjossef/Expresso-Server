@@ -331,5 +331,100 @@ app.get('/get-order-details/:orderId', async (req, res) => {
     }
   });
   
+
+// Get all orders for a specific user
+app.get('/get-user-orders/:userId', async (req, res) => {
+    const { userId } = req.params;
+    try {
+        const ordersResult = await pool.query(
+            `SELECT o.id AS orderId, o.status, o.order_date AS orderDate
+             FROM orders o
+             WHERE o.user_id = $1
+             ORDER BY o.order_date DESC`,
+            [userId]
+        );
+
+        const orders = [];
+        for (const order of ordersResult.rows) {
+            const productsResult = await pool.query(
+                `SELECT op.product_id, op.product_type, op.quantity,
+                        COALESCE(cm.name, mf.name, c.name) AS product_name,
+                        COALESCE(cm.price, mf.price, c.price) AS price
+                 FROM ordered_products op
+                 LEFT JOIN coffee_machines cm ON op.product_id = cm.id AND op.product_type = 'coffee_machines'
+                 LEFT JOIN milk_frothers mf ON op.product_id = mf.id AND op.product_type = 'milk_frothers'
+                 LEFT JOIN capsules c ON op.product_id = c.id AND op.product_type = 'capsules'
+                 WHERE op.order_id = $1`,
+                [order.orderid]
+            );
+            orders.push({ ...order, products: productsResult.rows });
+        }
+
+        res.status(200).json(orders);
+    } catch (err) {
+        console.error('❌ Error fetching user orders:', err);
+        res.status(500).json({ error: 'Server error while fetching user orders' });
+    }
+});
+
+// Set order status
+// app.put('/set-status-order/:orderId', async (req, res) => {
+//     try {
+//         const { orderId } = req.params;
+//         const { status } = req.body;
+//         const validStatuses = ['delivered', 'cancelled'];
+//         if (!validStatuses.includes(status)) {
+//             return res.status(400).json({ error: 'Invalid status value' });
+//         }
+
+//         const result = await pool.query(
+//             `UPDATE orders SET status = $1 WHERE id = $2 RETURNING *`,
+//             [status, orderId]
+//         );
+
+//         if (result.rows.length === 0) {
+//             return res.status(404).json({ error: 'Order not found' });
+//         }
+
+//         res.status(200).json({ message: 'Order status updated successfully', order: result.rows[0] });
+//     } catch (err) {
+//         console.error('❌ Error updating order status:', err);
+//         res.status(500).json({ error: 'Server error' });
+//     }
+// });
+
+// Reorder an order
+app.post('/reorder/:orderId', async (req, res) => {
+    const { orderId } = req.params;
+    try {
+        const orderedProducts = await pool.query(
+            `SELECT product_id, product_type, quantity FROM ordered_products WHERE order_id = $1`,
+            [orderId]
+        );
+
+        if (orderedProducts.rows.length === 0) {
+            return res.status(404).json({ error: 'Order not found or no products in order' });
+        }
+
+        // Assuming you have user ID stored in the request session or token
+        const userId = req.user.id;
+
+        // Add items to shopping cart for reorder
+        for (const product of orderedProducts.rows) {
+            const { product_id, product_type, quantity } = product;
+            await pool.query(
+                `INSERT INTO shopping_cart (user_id, product_id, product_type, quantity)
+                 VALUES ($1, $2, $3, $4)`,
+                [userId, product_id, product_type, quantity]
+            );
+        }
+
+        res.status(200).json({ message: 'Order added to cart successfully' });
+    } catch (err) {
+        console.error('❌ Error reordering:', err);
+        res.status(500).json({ error: 'Server error while reordering' });
+    }
+});
+
   
 export default app;
