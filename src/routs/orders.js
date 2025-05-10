@@ -1,95 +1,74 @@
+// src/routes/orders.js
 import express from 'express';
-import pool from '../data-access/db.js'; 
+import pool from '../data-access/db.js';
 import { sendOrderConfirmationEmail } from '../utils/mailer.js';
 
-const app = express.Router();
+const router = express.Router();
+router.use(express.json());
 
-
-// order
-// app.post('/add-order/:userId', async (req, res) => {
-//   const { userId } = req.params
-//     try {
-//       const result = await pool.query(
-//         `INSERT INTO orders (user_id, status, order_date)
-//          VALUES ($1, $2, $3) RETURNING *`,
-//         [userId, 'pending', CURRENT_DATE]
-        
-//       );
-//       const newOrder = result.rows[0];
-//       const orderId = newOrder.order_id;
-//       const shoopingCardProd=await pool.query()
-   
-//       res.status(201).json({ message: "📦 Order added successfully", order: result.rows[0] });
-//     } catch (err) {
-//       console.error("❌ Error inserting order:", err);
-//       res.status(500).json({ error: "Server error" });
-//     }
-//   });
-
-
-app.post('/confirm-order/:userId', async (req, res) => {
+/**
+ * 1) Confirm order: 
+ *    יוצר רשומה בטבלת orders, שולף מה־shopping_cart, מוסיף לשOrderedProducts ועדכון מלאי
+ */
+router.post('/confirm-order/:userId', async (req, res) => {
   const { userId } = req.params;
-
   const client = await pool.connect();
+
   try {
     await client.query('BEGIN');
 
-    
+    // 1. צור order חדש
     const orderResult = await client.query(
       `INSERT INTO orders (user_id, status, order_date)
-       VALUES ($1, 'pending', CURRENT_DATE)
+         VALUES ($1, 'pending', CURRENT_DATE)
        RETURNING id`,
       [userId]
     );
     const orderId = orderResult.rows[0].id;
-    // שליפת כתובת האימייל של המשתמש
-    const emailResult = await pool.query(
+
+    // 2. שלוף מייל משתמש
+    const emailRes = await client.query(
       `SELECT email FROM users WHERE id = $1`,
       [userId]
     );
-    const userEmail = emailResult.rows[0]?.email;
-        // שליחת מייל אישור הזמנה
+    const userEmail = emailRes.rows[0]?.email;
     if (userEmail) {
       await sendOrderConfirmationEmail(userEmail, orderId);
     }
 
-   
-    const cartItemsResult = await client.query(
+    // 3. שלוף פריטי עגלה
+    const cartRes = await client.query(
       `SELECT product_id, product_type, quantity
-       FROM shopping_cart
-       WHERE user_id = $1`,
+         FROM shopping_cart
+        WHERE user_id = $1`,
       [userId]
     );
-
-    const cartItems = cartItemsResult.rows;
-
+    const cartItems = cartRes.rows;
     if (cartItems.length === 0) {
-      throw new Error("🛒 Cart is empty.");
+      throw new Error('🛒 Cart is empty');
     }
 
-    
-    for (const item of cartItems) {
-      const { product_id, product_type, quantity } = item;
-
+    // 4. הוסף ל־ordered_products ועדכן מלאי
+    for (const { product_id, product_type, quantity } of cartItems) {
+      // הוספה לטבלת ordered_products
       await client.query(
-        `INSERT INTO ordered_products (order_id, product_id, product_type, quantity)
-         VALUES ($1, $2, $3, $4)`,
+        `INSERT INTO ordered_products
+           (order_id, product_id, product_type, quantity)
+         VALUES ($1,$2,$3,$4)`,
         [orderId, product_id, product_type, quantity]
       );
-
-    
-      const tableName = product_type; 
+      // עדכון שדה sum_of בטבלת המוצר הנכון
       await client.query(
-        `UPDATE ${tableName}
-         SET sum_of = sum_of - $1
-         WHERE id = $2`,
+        `UPDATE ${product_type}
+            SET sum_of = sum_of - $1
+          WHERE id = $2`,
         [quantity, product_id]
       );
     }
 
+    // 5. רוקן קארט
     await client.query(
-      `DELETE FROM shopping_cart
-       WHERE user_id = $1`,
+      `DELETE FROM shopping_cart WHERE user_id = $1`,
       [userId]
     );
 
@@ -99,58 +78,111 @@ app.post('/confirm-order/:userId', async (req, res) => {
       orderId,
       itemsCount: cartItems.length
     });
-
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error("Error confirming order:", err);
-    res.status(500).json({ error: "Server error during order confirmation" });
+    console.error('❌ Error confirming order:', err);
+    res.status(500).json({ error: 'Server error during order confirmation' });
   } finally {
     client.release();
   }
 });
 
 
-app.get('/get-all-orders', async (req, res) => {
-    try {
-      const result = await pool.query('SELECT * FROM orders ORDER BY order_date DESC');
-      res.status(200).json(result.rows);
-    } catch (err) {
-      console.error("❌ Error fetching orders:", err);
-      res.status(500).json({ error: "Server error" });
-    }
-  });
+/**
+ * 2) Create a new order manually
+ */
+router.post('/add-order', async (req, res) => {
+  const { user_id, status, order_date } = req.body;
+  if (!user_id || !status || !order_date) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
 
-  // ordered-product
-app.post('/add-ordered-product', async (req, res) => {
-    try {
-      const { order_id, product_id,product_type, quantity } = req.body;
-  
-      const result = await pool.query(
-        `INSERT INTO ordered_products (order_id, product_id,product_type,quantity)
-         VALUES ($1, $2, $3, $4) RETURNING *`,
-        [order_id, product_id,product_type, quantity]
-      );
-  
-      res.status(201).json({ message: "🛒 Product added to order", orderedProduct: result.rows[0] });
-    } catch (err) {
-      console.error("❌ Error inserting ordered product:", err);
-      res.status(500).json({ error: "Server error" });
-    }
-  });
-  
-app.get('/get-all-ordered-products', async (req, res) => {
-    try {
-      const result = await pool.query('SELECT * FROM ordered_products ORDER BY order_id');
-      res.status(200).json(result.rows);
-    } catch (err) {
-      console.error("❌ Error fetching ordered products:", err);
-      res.status(500).json({ error: "Server error" });
-    }
-  });
-app.delete('/delete-all-orders', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `INSERT INTO orders (user_id, status, order_date)
+         VALUES ($1, $2, $3)
+       RETURNING *`,
+      [user_id, status, order_date]
+    );
+    res.status(201).json({ order: result.rows[0] });
+  } catch (err) {
+    console.error('❌ Error inserting order:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
+/**
+ * 3) List all orders
+ */
+router.get('/get-all-orders', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM orders ORDER BY order_date DESC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('❌ Error fetching orders:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
+/**
+ * 4) Add a product to an order (with product_type)
+ */
+router.post('/add-ordered-product', async (req, res) => {
+  const { order_id, product_id, product_type, quantity } = req.body;
+
+  // בדיקות ולידציה
+  if (!order_id || !product_id || !product_type || !quantity) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+  if (!['coffee_machines', 'milk_frothers', 'capsules'].includes(product_type)) {
+    return res.status(400).json({ error: 'Invalid product_type' });
+  }
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO ordered_products
+         (order_id, product_id, product_type, quantity)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [order_id, product_id, product_type, quantity]
+    );
+    res.status(201).json({ orderedProduct: result.rows[0] });
+  } catch (err) {
+    console.error('❌ Error inserting ordered product:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
+/**
+ * 5) List all ordered‐products
+ */
+router.get('/get-all-ordered-products', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT order_id, product_id, product_type, quantity
+         FROM ordered_products
+        ORDER BY order_id`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('❌ Error fetching ordered products:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
+/**
+ * 6) Delete all orders
+ */
+router.delete('/delete-all-orders', async (req, res) => {
   try {
     await pool.query('DELETE FROM orders');
-    res.status(200).json({ message: '🗑️ All orders deleted successfully' });
+    res.json({ message: '🗑️ All orders deleted successfully' });
   } catch (err) {
     console.error('❌ Error deleting orders:', err);
     res.status(500).json({ error: 'Server error while deleting orders' });
@@ -158,273 +190,144 @@ app.delete('/delete-all-orders', async (req, res) => {
 });
 
 
-app.put('/set-status-order/:orderId', async (req, res) => {
+/**
+ * 7) Update order status
+ */
+router.put('/set-status-order/:orderId', async (req, res) => {
+  const { orderId } = req.params;
+  const { status } = req.body;
+  const validStatuses = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
+
+  if (!validStatuses.includes(status)) {
+    return res.status(400).json({ error: 'Invalid status value' });
+  }
+
   try {
-      const { orderId } = req.params;
-      const { status } = req.body;
-      
-      const validStatuses = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
-      if (!validStatuses.includes(status)) {
-          return res.status(400).json({ error: 'Invalid status value' });
-      }
-
-      const result = await pool.query(
-          `UPDATE orders SET status = $1 WHERE id = $2 RETURNING *`,
-          [status, orderId]
-      );
-
-      if (result.rows.length === 0) {
-          return res.status(404).json({ error: 'Order not found' });
-      }
-
-      res.status(200).json({ message: 'Order status updated successfully', order: result.rows[0] });
+    const result = await pool.query(
+      `UPDATE orders SET status = $1 WHERE id = $2 RETURNING *`,
+      [status, orderId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    res.json({ message: 'Order status updated', order: result.rows[0] });
   } catch (err) {
-      console.error(' Error updating order status:', err);
-      res.status(500).json({ error: 'Server error' });
+    console.error('❌ Error updating order status:', err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
 
-app.get('/get-order-details/:orderId', async (req, res) => {
+/**
+ * 8) Get order details with products & user email
+ */
+router.get('/get-order-details/:orderId', async (req, res) => {
   const { orderId } = req.params;
   try {
-      // שליפת פרטי ההזמנה
-      const orderResult = await pool.query(
-          `SELECT o.id AS order_id, o.status, o.order_date, u.email
-           FROM orders o
-           JOIN users u ON o.user_id = u.id
-           WHERE o.id = $1`,
-          [orderId]
-      );
+    // שליפת פרטי order + user email
+    const orderRes = await pool.query(
+      `SELECT o.id AS order_id, o.status, o.order_date, u.email
+         FROM orders o
+         JOIN users u ON o.user_id = u.id
+        WHERE o.id = $1`,
+      [orderId]
+    );
+    if (orderRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    const order = orderRes.rows[0];
 
-      if (orderResult.rows.length === 0) {
-          return res.status(404).json({ error: 'Order not found' });
-      }
+    // שליפת המוצרים
+    const productsRes = await pool.query(
+      `SELECT op.product_id, op.product_type, op.quantity,
+              COALESCE(cm.name, mf.name, c.name) AS product_name,
+              COALESCE(cm.price, mf.price, c.price) AS price
+         FROM ordered_products op
+         LEFT JOIN coffee_machines cm 
+           ON op.product_type='coffee_machines' AND cm.id=op.product_id
+         LEFT JOIN milk_frothers mf 
+           ON op.product_type='milk_frothers'   AND mf.id=op.product_id
+         LEFT JOIN capsules c 
+           ON op.product_type='capsules'       AND c.id=op.product_id
+        WHERE op.order_id = $1`,
+      [orderId]
+    );
+    order.products = productsRes.rows;
 
-      const order = orderResult.rows[0];
-
-      // שליפת המוצרים שהוזמנו
-      const productsResult = await pool.query(
-          `SELECT op.product_id, op.product_type, op.quantity,
-                  COALESCE(cm.name, mf.name, c.name) AS product_name, 
-                  COALESCE(cm.price, mf.price, c.price) AS price
-           FROM ordered_products op
-           LEFT JOIN coffee_machines cm ON op.product_id = cm.id AND op.product_type = 'coffee_machines'
-           LEFT JOIN milk_frothers mf ON op.product_id = mf.id AND op.product_type = 'milk_frothers'
-           LEFT JOIN capsules c ON op.product_id = c.id AND op.product_type = 'capsules'
-           WHERE op.order_id = $1`,
-          [orderId]
-      );
-
-      order.products = productsResult.rows;
-
-      res.status(200).json({
-          orderId: order.order_id,
-          status: order.status,
-          orderDate: order.order_date,
-          email: order.email,
-          products: order.products
-      });
+    res.json(order);
   } catch (err) {
-      console.error("❌ Error fetching order details:", err);
-      res.status(500).json({ error: 'Server error while fetching order details' });
+    console.error('❌ Error fetching order details:', err);
+    res.status(500).json({ error: 'Server error fetching order details' });
   }
 });
 
 
-  app.get('/BestSellers', async (req, res) => {
-    const { startDate, endDate } = req.query;
-  
-    if (!startDate || !endDate) {
-      return res.status(400).json({ error: "Missing date range" });
-    }
-  
-    if (new Date(startDate) > new Date(endDate)) {
-      return res.status(400).json({ error: "Invalid date range" });
-    }
-  
-    try {
-      const result = await pool.query(`
-        -- Query for best-selling coffee machines
-        SELECT cm.name, SUM(op.quantity) AS total_sold
-        FROM ordered_products op
-        JOIN orders o ON o.id = op.order_id
-        JOIN coffee_machines cm ON cm.id = op.product_id
-        WHERE o.order_date BETWEEN $1 AND $2
-        GROUP BY cm.name
-  
-        UNION ALL
-  
-        -- Query for best-selling milk frothers
-        SELECT mf.name, SUM(op.quantity) AS total_sold
-        FROM ordered_products op
-        JOIN orders o ON o.id = op.order_id
-        JOIN milk_frothers mf ON mf.id = op.product_id
-        WHERE o.order_date BETWEEN $1 AND $2
-        GROUP BY mf.name
-  
-        UNION ALL
-  
-        -- Query for best-selling capsules
-        SELECT c.name, SUM(op.quantity) AS total_sold
-        FROM ordered_products op
-        JOIN orders o ON o.id = op.order_id
-        JOIN capsules c ON c.id = op.product_id
-        WHERE o.order_date BETWEEN $1 AND $2
-        GROUP BY c.name
-        ORDER BY total_sold DESC
-      `, [startDate, endDate]);
-  
-      if (result.rows.length === 0) {
-        return res.status(200).json({ message: "No data for selected period." });
-      }
-  
-      res.status(200).json(result.rows);
-    } catch (err) {
-      console.error("❌ Error fetching best sellers:", err);  // הוצאת השגיאה המלאה
-      res.status(500).json({ error: "Server error", details: err.stack });  // הוספת פרטי שגיאה מדויקים יותר
-    }
-  
-  });
-  app.get('/search-products', async (req, res) => {
-    const { query } = req.query;
-  
-    if (!query || query.trim() === '') {
-      return res.status(400).json({ error: "Missing search term" });
-    }
-  
-    try {
-      const searchQuery = `%${query}%`;
-  
-      const result = await pool.query(`
-        SELECT id, name, price, image_path, 'coffee_machine' AS type
-        FROM coffee_machines
-        WHERE name ILIKE $1
-  
-        UNION ALL
-  
-        SELECT id, name, price, image_path, 'capsule' AS type
-        FROM capsules
-        WHERE name ILIKE $1
-  
-        UNION ALL
-  
-        SELECT id, name, price, image_path, 'milk_frother' AS type
-        FROM milk_frothers
-        WHERE name ILIKE $1
-      `, [searchQuery]);
-  
-      res.status(200).json(result.rows);
-    } catch (err) {
-      console.error("❌ Error searching products:", err);
-      res.status(500).json({ error: "Server error" });
-    }
-  });
+/**
+ * 9) Best Sellers
+ */
+// in src/routes/orders.js (or statistics.js)
 
-  app.delete('/delete-all-orders', async (req, res) => {
-    try {
-      await pool.query('DELETE FROM orders');
-      res.status(200).json({ message: '🗑️ All orders deleted successfully' });
-    } catch (err) {
-      console.error('❌ Error deleting orders:', err);
-      res.status(500).json({ error: 'Server error while deleting orders' });
-    }
-  });
-  
+router.get('/best-sellers', async (req, res) => {
+  const { startDate, endDate } = req.query;
+  if (!startDate || !endDate) {
+    return res.status(400).json({ error: 'Missing date range' });
+  }
 
-// Get all orders for a specific user
-app.get('/get-user-orders/:userId', async (req, res) => {
-    const { userId } = req.params;
-    try {
-        const ordersResult = await pool.query(
-            `SELECT o.id AS orderId, o.status, o.order_date AS orderDate
-             FROM orders o
-             WHERE o.user_id = $1
-             ORDER BY o.order_date DESC`,
-            [userId]
-        );
-
-        const orders = [];
-        for (const order of ordersResult.rows) {
-            const productsResult = await pool.query(
-                `SELECT op.product_id, op.product_type, op.quantity,
-                        COALESCE(cm.name, mf.name, c.name) AS product_name,
-                        COALESCE(cm.price, mf.price, c.price) AS price
-                 FROM ordered_products op
-                 LEFT JOIN coffee_machines cm ON op.product_id = cm.id AND op.product_type = 'coffee_machines'
-                 LEFT JOIN milk_frothers mf ON op.product_id = mf.id AND op.product_type = 'milk_frothers'
-                 LEFT JOIN capsules c ON op.product_id = c.id AND op.product_type = 'capsules'
-                 WHERE op.order_id = $1`,
-                [order.orderid]
-            );
-            orders.push({ ...order, products: productsResult.rows });
-        }
-
-        res.status(200).json(orders);
-    } catch (err) {
-        console.error('❌ Error fetching user orders:', err);
-        res.status(500).json({ error: 'Server error while fetching user orders' });
-    }
+  const sql = `
+    SELECT
+      op.product_type,
+      op.product_id,
+      SUM(op.quantity) AS total_sold,
+      -- grab the image and name from the correct table
+      COALESCE(cm.name, mf.name, c.name)     AS name,
+      COALESCE(cm.image_path, mf.image_path, c.image_path) AS image_path
+    FROM ordered_products op
+    JOIN orders o    ON o.id = op.order_id
+    LEFT JOIN coffee_machines   cm ON op.product_type='coffee_machines' AND cm.id=op.product_id
+    LEFT JOIN milk_frothers     mf ON op.product_type='milk_frothers'   AND mf.id=op.product_id
+    LEFT JOIN capsules          c  ON op.product_type='capsules'        AND c.id=op.product_id
+    WHERE o.order_date BETWEEN $1 AND $2
+    GROUP BY op.product_type, op.product_id, cm.name, mf.name, c.name, cm.image_path, mf.image_path, c.image_path
+    ORDER BY total_sold DESC
+  `;
+  try {
+    const { rows } = await pool.query(sql, [startDate, endDate]);
+    if (!rows.length) return res.json({ message: 'No data for selected period.' });
+    res.json(rows);
+  } catch (err) {
+    console.error('❌ Error fetching best sellers:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
-// Set order status
-// app.put('/set-status-order/:orderId', async (req, res) => {
-//     try {
-//         const { orderId } = req.params;
-//         const { status } = req.body;
-//         const validStatuses = ['delivered', 'cancelled'];
-//         if (!validStatuses.includes(status)) {
-//             return res.status(400).json({ error: 'Invalid status value' });
-//         }
 
-//         const result = await pool.query(
-//             `UPDATE orders SET status = $1 WHERE id = $2 RETURNING *`,
-//             [status, orderId]
-//         );
 
-//         if (result.rows.length === 0) {
-//             return res.status(404).json({ error: 'Order not found' });
-//         }
-
-//         res.status(200).json({ message: 'Order status updated successfully', order: result.rows[0] });
-//     } catch (err) {
-//         console.error('❌ Error updating order status:', err);
-//         res.status(500).json({ error: 'Server error' });
-//     }
-// });
-
-// Reorder an order
-app.post('/reorder/:orderId', async (req, res) => {
-    const { orderId } = req.params;
-    try {
-        const orderedProducts = await pool.query(
-            `SELECT product_id, product_type, quantity FROM ordered_products WHERE order_id = $1`,
-            [orderId]
-        );
-
-        if (orderedProducts.rows.length === 0) {
-            return res.status(404).json({ error: 'Order not found or no products in order' });
-        }
-
-        // Assuming you have user ID stored in the request session or token
-        const userId = req.user.id;
-
-        // Add items to shopping cart for reorder
-        for (const product of orderedProducts.rows) {
-            const { product_id, product_type, quantity } = product;
-            await pool.query(
-                `INSERT INTO shopping_cart (user_id, product_id, product_type, quantity)
-                 VALUES ($1, $2, $3, $4)`,
-                [userId, product_id, product_type, quantity]
-            );
-        }
-
-        res.status(200).json({ message: 'Order added to cart successfully' });
-    } catch (err) {
-        console.error('❌ Error reordering:', err);
-        res.status(500).json({ error: 'Server error while reordering' });
-    }
+/**
+ * 10) Search products
+ */
+router.get('/search-products', async (req, res) => {
+  const { query } = req.query;
+  if (!query) {
+    return res.status(400).json({ error: 'Missing search term' });
+  }
+  try {
+    const q = `%${query}%`;
+    const result = await pool.query(`
+      SELECT id,name,price,image_path,'coffee_machines' AS type
+        FROM coffee_machines WHERE name ILIKE $1
+      UNION ALL
+      SELECT id,name,price,image_path,'capsules'       AS type
+        FROM capsules       WHERE name ILIKE $1
+      UNION ALL
+      SELECT id,name,price,image_path,'milk_frothers'  AS type
+        FROM milk_frothers  WHERE name ILIKE $1
+    `, [q]);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('❌ Error searching products:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
-  
-export default app;
+
+export default router;
