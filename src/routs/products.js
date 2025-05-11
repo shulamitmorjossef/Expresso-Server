@@ -1,29 +1,61 @@
 import express from 'express';
 import pool from '../data-access/db.js'; 
 import multer from 'multer';
+import path from 'path';
+
 
 const app = express.Router();
-const upload = multer();
+app.use(express.static('public'));
 
-app.post('/add-coffee-machines', upload.none(), async (req, res) => {
+const storage = multer.diskStorage({
+  destination: 'public/images',
+  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
+});
+const upload = multer({ storage });
+
+// new one
+app.post('/add-coffee-machines', upload.single('image'), async (req, res) => {
+  const { name, color, capacity, price} = req.body;
+  const imagePath = `/images/${req.file.filename}`;
+
   try {
-    console.log("Add coffee request body:", req.body); 
-
-    const { name, color, capacity, price} = req.body;
-
 
     const result = await pool.query(
-      `INSERT INTO coffee_machines (name, color, capacity, price)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [name, color, capacity, price]
+      `INSERT INTO coffee_machines 
+        (name, color, capacity, price, image_path)
+       VALUES ($1, $2, $3, $4, $5) 
+       RETURNING *`,
+      [name, color, capacity, price, imagePath]
     );
 
-    res.status(201).json({ message: "☕ Coffee machine added successfully", machine: result.rows[0] });
+    res.status(201).json({ message: " Coffee machine added successfully", machine: result.rows[0] });
   } catch (err) {
     console.error("Error inserting coffee machine:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: 'Error adding coffee machine' });
   }
 });
+
+
+// original - aderet
+// app.post('/add-coffee-machines', upload.none(), async (req, res) => {
+//   try {
+//     console.log("Add coffee request body:", req.body); 
+
+//     const { name, color, capacity, price} = req.body;
+
+
+//     const result = await pool.query(
+//       `INSERT INTO coffee_machines (name, color, capacity, price)
+//        VALUES ($1, $2, $3, $4) RETURNING *`,
+//       [name, color, capacity, price]
+//     );
+
+//     res.status(201).json({ message: "☕ Coffee machine added successfully", machine: result.rows[0] });
+//   } catch (err) {
+//     console.error("Error inserting coffee machine:", err);
+//     res.status(500).json({ error: "Server error" });
+//   }
+// });
 
 
 // app.post('/add-coffee-machines', async (req, res) => {
@@ -49,7 +81,10 @@ app.post('/add-coffee-machines', upload.none(), async (req, res) => {
 app.get("/get-coffee-machine/:id", async (req, res) => {
     const { id } = req.params;
     try {
-      const result = await pool.query("SELECT * FROM coffee_machines WHERE id = $1", [id]);
+      const result = await pool.query(
+        "SELECT * FROM coffee_machines WHERE id = $1",
+        [id]
+      );
       if (result.rows.length === 0) {
         return res.status(404).json({ message: "Machine not found" });
       }
@@ -70,25 +105,50 @@ app.get('/get-all-coffee-machines', async (req, res) => {
     }
   });
 
-app.put('/update-coffee-machine/:id', async (req, res) => {
+
+app.put('/update-coffee-machine/:id', upload.single('image'), async (req, res) => {
     const { id } = req.params;
-    const { name, color, capacity, price, image_path } = req.body;
+    const { name, color, capacity, price } = req.body;
+    let imagePath = req.body.image_path;
     try {
+      if (req.file) {
+        imagePath = `/images/${req.file.filename}`;
+      }
       const result = await pool.query(
-        `UPDATE coffee_machines SET name = $1, color = $2, capacity = $3, price = $4, image_path = $5 WHERE id = $6 RETURNING *`,
-        [name, color, capacity, price, image_path, id]
+        `UPDATE coffee_machines 
+         SET name = $1, color = $2, capacity = $3, price = $4, image_path = $5 
+         WHERE id = $6 RETURNING *`,
+        [name, color, capacity, price, imagePath, id]
       );
       if (result.rows.length === 0) {
         return res.status(404).json({ message: "Machine not found" });
       }
-      res.json({ message: "Machine updated", machine: result.rows[0] });
+      res.json({ message: "Machine updated successfully", machine: result.rows[0] });
     } catch (err) {
       console.error("Error updating machine:", err);
       res.status(500).json({ error: "Server error" });
     }
   });
+  // original - aderet
+// app.put('/update-coffee-machine/:id', async (req, res) => {
+//     const { id } = req.params;
+//     const { name, color, capacity, price, image_path } = req.body;
+//     try {
+//       const result = await pool.query(
+//         `UPDATE coffee_machines SET name = $1, color = $2, capacity = $3, price = $4, image_path = $5 WHERE id = $6 RETURNING *`,
+//         [name, color, capacity, price, image_path, id]
+//       );
+//       if (result.rows.length === 0) {
+//         return res.status(404).json({ message: "Machine not found" });
+//       }
+//       res.json({ message: "Machine updated", machine: result.rows[0] });
+//     } catch (err) {
+//       console.error("Error updating machine:", err);
+//       res.status(500).json({ error: "Server error" });
+//     }
+//   });
 
-  app.put('/update-coffee-machine-stock/:id', async (req, res) => {
+app.put('/update-coffee-machine-stock/:id', async (req, res) => {
     const { id } = req.params;
     const { sum_of } = req.body;
     try {
@@ -100,21 +160,6 @@ app.put('/update-coffee-machine/:id', async (req, res) => {
     } catch (err) {
       console.error('Error updating coffee machine stock:', err);
       res.status(500).json({ error: 'Server error' });
-    }
-  });
-  
-
-app.delete('/delete-coffee-machine/:id', async (req, res) => {
-    const { id } = req.params;
-    try {
-      const result = await pool.query("DELETE FROM coffee_machines WHERE id = $1 RETURNING *", [id]);
-      if (result.rows.length === 0) {
-        return res.status(404).json({ message: "Machine not found" });
-      }
-      res.json({ message: "Machine deleted", machine: result.rows[0] });
-    } catch (err) {
-      console.error("Error deleting machine:", err);
-      res.status(500).json({ error: "Server error" });
     }
   });
   
