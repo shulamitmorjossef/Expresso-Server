@@ -4,12 +4,9 @@ const editCapsulesTable = async () => {
     try {
         await pool.query(`
 
-          DROP TABLE IF EXISTS coupons;
-
-            CREATE TABLE coupons (
-            codename TEXT PRIMARY KEY,
-            discount_percent INTEGER NOT NULL CHECK (discount_percent BETWEEN 1 AND 99)
-            );
+          ALTER TABLE coffee_machines ADD COLUMN image BYTEA NOT NULL DEFAULT '';
+          ALTER TABLE milk_frothers ADD COLUMN image BYTEA NOT NULL DEFAULT '';
+          ALTER TABLE capsules ADD COLUMN image BYTEA NOT NULL DEFAULT '';
 
 
         `);
