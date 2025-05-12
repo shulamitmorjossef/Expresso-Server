@@ -5,99 +5,6 @@ import path from 'path';
 
 
 const app = express.Router();
-<<<<<<< HEAD
-<<<<<<< HEAD
-const storage = multer.memoryStorage();
-const upload = multer({storage});
-
-
-// Update product
-app.put('/update-coffee-machine/:id', upload.single('image'), async (req, res) => {
-  const { id } = req.params;
-  const {
-      name,
-      color,
-      capacity,
-      price
-  } = req.body;
-  
-  try {
-      // step 1: Check if the product exists
-      const existingResult = await pool.query(
-      `SELECT * FROM coffee_machines WHERE id = $1`,
-      [id]
-      );
-  
-      if (existingResult.rows.length === 0) {
-      return res.status(404).json({ message: 'Product not found' });
-      }
-  
-      const existing = existingResult.rows[0];
-  
-      // // step 2: Check if any changes were made
-      // const noChange =
-      // existing.name === name &&
-      // (existing.description || '') === (description || '') &&
-      // existing.category_id == category &&
-      // Number(existing.price) === Number(price) &&
-      // Number(existing.stock_quantity) === Number(stock_quantity) &&
-      // Number(existing.min_stock_threshold) === Number(min_stock_threshold) &&
-      // !req.file;
-  
-      // if (noChange) {
-      // return res.status(200).json({ message: 'No changes detected, nothing was updated.' });
-      // }
-  
-      // step 3: Update the machine
-      let query = `
-      UPDATE coffee_machines SET
-          name = $1,
-          color = $2,
-          capacity = $3,
-          price = $4
-      `;
-      const values = [
-      name,
-      color,
-      capacity,
-      price
-      ];
-  
-      if (req.file) {
-      query += `, image = $5 WHERE id = $6`;
-      values.push(req.file.buffer, id);
-      } else {
-      query += ` WHERE id = $5`;
-      values.push(id);
-      }
-  
-      await pool.query(query, values);
-  
-      res.status(200).json({ message: 'Coffee machine updated successfully' });
-  } catch (error) {
-      console.error('Failed to update coffee machine:', error);
-      res.status(500).send('Server error');
-  }
-  });
-
-app.post('/add-coffee-machines', upload.single('image'), async (req, res) => {
-  try {
-    console.log("Add coffee request body:", req.body); 
-
-    const { name, color, capacity, price} = req.body;
-    const imageBuffer = req.file.buffer;
-
-    const result = await pool.query(
-      `INSERT INTO coffee_machines (name, color, capacity, price, image)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [name, color, capacity, price, imageBuffer]
-    );
-
-    res.status(201).json({ message: "Coffee machine added successfully", machine: result.rows[0] });
-=======
-app.use(express.static('public'));
-=======
->>>>>>> 289d2dee785fd9b62bd7c8f2d6303e5ca7c32426
 
 const storage = multer.memoryStorage(); 
 
@@ -122,18 +29,10 @@ app.post('/add-coffee-machines', upload.single('image'), async (req, res) => {
       [name, color, capacity, price, imageBuffer]
     );
 
-<<<<<<< HEAD
-    res.status(201).json({ message: " Coffee machine added successfully", machine: result.rows[0] });
->>>>>>> d9dc160c20245cecfd24e4b39373e806c4539452
-  } catch (err) {
-    console.error("Error inserting coffee machine:", err);
-    res.status(500).json({ error: 'Error adding coffee machine' });
-=======
     res.status(200).json({ message: 'Product added successfully' });
   } catch (error) {
     console.error('Error adding product:', error);
     res.status(500).json({ error: 'Server error while adding product' });
->>>>>>> 289d2dee785fd9b62bd7c8f2d6303e5ca7c32426
   }
 });
 
@@ -147,39 +46,6 @@ app.get('/get-coffee-machine/:id', async (req, res) => {
           WHERE id = $1`,
           [id]
       );
-<<<<<<< HEAD
-      if (result.rows.length === 0) {
-        return res.status(404).json({ message: "Machine not found" });
-      }
-      res.json(result.rows[0]);
-    } catch (err) {
-      console.error("Error fetching coffee machine:", err);
-      res.status(500).json({ message: "Server error" });
-    }
-  });
-  
-app.get('/get-all-coffee-machines', async (req, res) => {
-    try {
-      const result = await pool.query('SELECT * FROM coffee_machines');
-      const products = result.rows.map(c => ({
-        id: c.id,
-        name: c.name,
-        color: c.color,
-        capacity: c.capacity,
-        price: c.price,
-        imageBase64: Buffer.from(c.image).toString('base64')     
-        }));
-        res.json(products);
-      res.status(200).json(result.rows);
-    } catch (err) {
-      console.error('Error fetching coffee machine:', err);
-      res.status(500).send('Failed to fetch v');
-    }
-  });
-
-<<<<<<< HEAD
-=======
-=======
 
       if (result.rows.length === 0) {
           return res.status(404).json({ message: 'Coffee machine not found' });
@@ -200,7 +66,6 @@ app.get('/get-all-coffee-machines', async (req, res) => {
       res.status(500).send('Server error');
   }
 });
->>>>>>> 289d2dee785fd9b62bd7c8f2d6303e5ca7c32426
 
 app.put('/update-coffee-machine/:id', upload.single('image'), async (req, res) => {
   const { id } = req.params;
@@ -221,33 +86,6 @@ app.put('/update-coffee-machine/:id', upload.single('image'), async (req, res) =
       if (existingResult.rows.length === 0) {
       return res.status(404).json({ message: 'Product not found' });
       }
-<<<<<<< HEAD
-      res.json({ message: "Machine updated successfully", machine: result.rows[0] });
-    } catch (err) {
-      console.error("Error updating machine:", err);
-      res.status(500).json({ error: "Server error" });
-    }
-  });
-  // original - aderet
->>>>>>> d9dc160c20245cecfd24e4b39373e806c4539452
-// app.put('/update-coffee-machine/:id', async (req, res) => {
-//     const { id } = req.params;
-//     const { name, color, capacity, price, image_path } = req.body;
-//     try {
-//       const result = await pool.query(
-//         `UPDATE coffee_machines SET name = $1, color = $2, capacity = $3, price = $4, image_path = $5 WHERE id = $6 RETURNING *`,
-//         [name, color, capacity, price, image_path, id]
-//       );
-//       if (result.rows.length === 0) {
-//         return res.status(404).json({ message: "Machine not found" });
-//       }
-//       res.json({ message: "Machine updated", machine: result.rows[0] });
-//     } catch (err) {
-//       console.error("Error updating machine:", err);
-//       res.status(500).json({ error: "Server error" });
-//     }
-//   });
-=======
   
       const existing = existingResult.rows[0];
   
@@ -297,7 +135,7 @@ app.put('/update-coffee-machine/:id', upload.single('image'), async (req, res) =
 
 app.get('/get-all-coffee-machines', async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, name, color, capacity, price, image FROM coffee_machines ');
+    const result = await pool.query('SELECT id, name, color, capacity, price, image,sum_of FROM coffee_machines ');
     
   
     const coffeeMachines = result.rows.map(p => ({
@@ -306,6 +144,7 @@ app.get('/get-all-coffee-machines', async (req, res) => {
       color: p.color,
       capacity: p.capacity,
       price: p.price,
+      sum_of: p.sum_of,
       image: Buffer.from(p.image).toString('base64')
     }));
     res.json(coffeeMachines);
@@ -314,7 +153,6 @@ app.get('/get-all-coffee-machines', async (req, res) => {
     res.status(500).send('Server error');
 }
 });
->>>>>>> 289d2dee785fd9b62bd7c8f2d6303e5ca7c32426
 
 app.put('/update-coffee-machine-stock/:id', async (req, res) => {
     const { id } = req.params;
@@ -419,7 +257,7 @@ app.get("/get-capsule/:id", async (req, res) => {
 
 app.get('/get-all-capsule', async (req, res) => {
     try {
-      const result = await pool.query('SELECT id, name, flavor, quantity_per_package, net_weight_grams, price, ingredients, image FROM capsules');
+      const result = await pool.query('SELECT id, name, flavor, quantity_per_package, net_weight_grams, price, ingredients, image, sum_of FROM capsules');
       
         const capsules = result.rows.map(capsule => ({
         id: capsule.id,
@@ -429,6 +267,7 @@ app.get('/get-all-capsule', async (req, res) => {
         net_weight_grams: capsule.net_weight_grams,
         price: capsule.price,
         ingredients: capsule.ingredients,
+        sum_of: capsule.sum_of,
         image: Buffer.from(capsule.image).toString('base64')
 
       }));
@@ -585,7 +424,7 @@ app.get('/get-milk-frother/:id', async (req, res) => {
 
 app.get('/get-all-milk-frothers', async (req, res) => {
     try {
-      const result = await pool.query('SELECT id, name, color, frothing_type, capacity, price, image FROM milk_frothers');
+      const result = await pool.query('SELECT id, name, color, frothing_type, capacity, price, image, sum_of FROM milk_frothers');
 
       const milk_frothers = result.rows.map(milk_frother => ({
         id: milk_frother.id,
@@ -594,6 +433,7 @@ app.get('/get-all-milk-frothers', async (req, res) => {
         frothing_type: milk_frother.frothing_type,
         capacity: milk_frother.capacity,
         price: milk_frother.price,
+        sum_of: milk_frother.sum_of,
         image: Buffer.from(milk_frother.image).toString('base64')
 
       }));
