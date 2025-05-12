@@ -93,7 +93,7 @@ app.put('/update-coffee-machine/:id', upload.single('image'), async (req, res) =
       const noChange =
       existing.name === name &&
       (existing.color || '') === (color || '') &&
-      existing.capacity == capacity &&
+      existing.capacity === capacity &&
       Number(existing.price) === Number(price) &&
       !req.file; 
   
