@@ -135,7 +135,7 @@ app.put('/update-coffee-machine/:id', upload.single('image'), async (req, res) =
 
 app.get('/get-all-coffee-machines', async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, name, color, capacity, price, image,sum_of FROM coffee_machines ');
+    const result = await pool.query('SELECT id, name, color, capacity, price, image, sum_of FROM coffee_machines ');
     
   
     const coffeeMachines = result.rows.map(p => ({
@@ -433,7 +433,7 @@ app.get('/get-all-milk-frothers', async (req, res) => {
         frothing_type: milk_frother.frothing_type,
         capacity: milk_frother.capacity,
         price: milk_frother.price,
-        sum_of: milk_frother.sum_of,
+        sum_of:milk_frother.sum_of,
         image: Buffer.from(milk_frother.image).toString('base64')
 
       }));
@@ -538,25 +538,43 @@ app.delete('/delete-milk-frother/:id', async (req, res) => {
 
   
   //  Search across all products by name prefix
-app.get('/search-products', async (req, res) => {
-  const { query } = req.query;
+  app.get('/search-products', async (req, res) => {
+    const { query } = req.query;
+  
+    if (!query) {
+      return res.status(400).json({ error: 'Missing search term' });
+    }
+  
+    try {
+      const q = `%${query}%`;
+  
+      const result = await pool.query(`
+        SELECT id, name, price, image, 'coffee_machines' AS type
+          FROM coffee_machines WHERE name ILIKE $1
+        UNION ALL
+        SELECT id, name, price, image, 'capsules' AS type
+          FROM capsules WHERE name ILIKE $1
+        UNION ALL
+        SELECT id, name, price, image, 'milk_frothers' AS type
+          FROM milk_frothers WHERE name ILIKE $1
+      `, [q]);
+  
+      const products = result.rows.map(p => ({
+        ...p,
+        image: p.image
+        ? `data:image/png;base64,${Buffer.from(p.image).toString('base64')}`
+        : null
 
-  if (!query) return res.status(400).json({ error: 'Missing search query' });
-
-  try {
-    const [coffee, capsules, frothers] = await Promise.all([
-      pool.query(`SELECT *, 'coffee_machine' as type FROM coffee_machines WHERE LOWER(name) LIKE LOWER($1)`, [`${query}%`]),
-      pool.query(`SELECT *, 'capsule' as type FROM capsules WHERE LOWER(name) LIKE LOWER($1)`, [`${query}%`]),
-      pool.query(`SELECT *, 'milk_frother' as type FROM milk_frothers WHERE LOWER(name) LIKE LOWER($1)`, [`${query}%`]),
-    ]);
-
-    const results = [...coffee.rows, ...capsules.rows, ...frothers.rows];
-    res.json(results);
-  } catch (err) {
-    console.error("Error in search:", err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
+      }));
+  
+      res.json(products);
+    } catch (err) {
+      console.error(' Error searching products:', err);
+      res.status(500).json({ error: 'Server error' });
+    }
+  });
+  
+  
 
 
 

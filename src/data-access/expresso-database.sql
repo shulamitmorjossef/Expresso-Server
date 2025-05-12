@@ -40,7 +40,6 @@ CREATE TABLE IF NOT EXISTS coffee_machines (
   color TEXT,
   capacity INTEGER,
   price NUMERIC(10, 2),
-  image_path TEXT,
   sum_of INTEGER DEFAULT 0,
   image BYTEA NOT NULL
 );
@@ -52,8 +51,12 @@ CREATE TABLE IF NOT EXISTS milk_frothers (
   frothing_type TEXT,
   capacity INTEGER,
   price NUMERIC(10, 2),
+<<<<<<< HEAD
   image_path TEXT,
   sum_of INTEGER DEFAULT 0,
+=======
+  sum_of INTEGER DEFAULT 0
+>>>>>>> 11559d2894ce800a4ac809edddef98ed8be4028d
   image BYTEA NOT NULL
 
 );
@@ -65,7 +68,6 @@ CREATE TABLE IF NOT EXISTS capsules (
   quantity_per_package INTEGER NOT NULL,
   net_weight_grams NUMERIC(10, 2),
   price NUMERIC(10, 2),
-  image_path TEXT,
   ingredients TEXT,
   sum_of INTEGER DEFAULT 0,
   image BYTEA NOT NULL
