@@ -204,20 +204,21 @@ app.delete('/delete-coffee-machine/:id', async (req, res) => {
 //     }
 //   });
 
-app.post('/add-capsule', upload.none(), async (req, res) => {
+app.post('/add-capsule', upload.single('image'), async (req, res) => {
   try {
-    console.log("Add capsule request body:", req.body); 
 
     const { name, flavor, quantity_per_package, net_weight_grams, price, ingredients } = req.body;
+    const imageBuffer = req.file.buffer;
 
-    const result = await pool.query(
-      `INSERT INTO capsules (name, flavor, quantity_per_package, net_weight_grams, price, ingredients)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [name, flavor, quantity_per_package, net_weight_grams, price, ingredients]
+    await pool.query(
+      `INSERT INTO capsules 
+      (name, flavor, quantity_per_package, net_weight_grams, price, ingredients, image)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [name, flavor, quantity_per_package, net_weight_grams, price, ingredients, imageBuffer]
     );
 
 
-    res.status(201).json({ message: "Capsule added successfully", capsule: result.rows[0] });
+    res.status(201).json({ message: "Capsule added successfully"});
   } catch (err) {
     console.error("Error inserting capsule:", err);
     res.status(500).json({ error: "Server error" });
@@ -228,11 +229,25 @@ app.get("/get-capsule/:id", async (req, res) => {
     const { id } = req.params;
   
     try {
-      const result = await pool.query("SELECT * FROM capsules WHERE id = $1", [id]);
+      const result = await pool.query(
+        `SELECT id, name, flavor, quantity_per_package, net_weight_grams, price, ingredients, image
+        FROM capsules 
+        WHERE id = $1`, [id]);
       if (result.rows.length === 0) {
         return res.status(404).json({ message: "Capsule not found" });
       }
-      res.json(result.rows[0]);
+      const capsule = result.rows[0];
+      const capsuleData = {
+      id: capsule.id,
+      name: capsule.name,
+      flavor: capsule.flavor,
+      quantity_per_package: capsule.quantity_per_package,
+      net_weight_grams: capsule.net_weight_grams,
+      price: capsule.price,
+      ingredients: capsule.ingredients,
+      image_url: `data:image/jpeg;base64,${Buffer.from(capsule.image).toString('base64')}`      };
+
+      res.json(capsuleData);
     } catch (err) {
       console.error("Error fetching capsule:", err);
       res.status(500).json({ message: "Server error" });
@@ -241,26 +256,86 @@ app.get("/get-capsule/:id", async (req, res) => {
 
 app.get('/get-all-capsule', async (req, res) => {
     try {
-      const result = await pool.query('SELECT * FROM capsules');
-      res.status(200).json(result.rows);
+      const result = await pool.query('SELECT id, name, flavor, quantity_per_package, net_weight_grams, price, ingredients, image FROM capsules');
+      
+        const capsules = result.rows.map(capsule => ({
+        id: capsule.id,
+        name: capsule.name,
+        flavor: capsule.flavor,
+        quantity_per_package: capsule.quantity_per_package,
+        net_weight_grams: capsule.net_weight_grams,
+        price: capsule.price,
+        ingredients: capsule.ingredients,
+        image: Buffer.from(capsule.image).toString('base64')
+
+      }));
+      res.json(capsules);
     } catch (err) {
       console.error('Error fetching users:', err);
       res.status(500).send('Failed to fetch v');
     }
 });
 
-app.put('/update-capsule/:id', async (req, res) => {
+app.put('/update-capsule/:id', upload.single('image'), async (req, res) => {
     const { id } = req.params;
-    const { name, flavor, quantity_per_package, net_weight_grams, price, image_path, ingredients } = req.body;
+    const { name, flavor, quantity_per_package, net_weight_grams, price, ingredients } = req.body;
     try {
-      const result = await pool.query(
-        `UPDATE capsules SET name = $1, flavor = $2, quantity_per_package = $3, net_weight_grams = $4, price = $5, image_path = $6, ingredients = $7 WHERE id = $8 RETURNING *`,
-        [name, flavor, quantity_per_package, net_weight_grams, price, image_path, ingredients, id]
-      );
-      if (result.rows.length === 0) {
-        return res.status(404).json({ message: "Capsule not found" });
+      const existingResult = await pool.query(
+        `SELECT * FROM capsules WHERE id = $1`,
+        [id]
+        );
+    
+        if (existingResult.rows.length === 0) {
+        return res.status(404).json({ message: 'Product not found' });
+        }
+    
+        const existing = existingResult.rows[0];
+    
+        // step 2: Check if any changes were made
+        const noChange =
+        existing.name === name &&
+        (existing.flavor || '') === (flavor || '') &&
+        existing.quantity_per_package === quantity_per_package &&
+        existing.net_weight_grams === net_weight_grams &&
+        Number(existing.price) === Number(price) &&
+        existing.ingredients === ingredients &&
+        !req.file; 
+    
+        if (noChange) {
+        return res.status(200).json({ message: 'No changes detected, nothing was updated.' });
+        }
+
+        let query = `
+          UPDATE capsules SET
+          name = $1,
+          flavor = $2,
+          quantity_per_package = $3,
+          net_weight_grams = $4,
+          price = $5,
+          ingredients = $6
+      `;
+      const values = [
+      name,
+      flavor,
+      quantity_per_package,
+      net_weight_grams,
+      price,
+      ingredients
+      ];
+
+  
+      if (req.file) {
+      query += `, image = $7 WHERE id = $8`;
+      values.push(req.file.buffer, id);
+      } else {
+      query += ` WHERE id = $7`;
+      values.push(id);
       }
-      res.json({ message: "Capsule updated", capsule: result.rows[0] });
+  
+      await pool.query(query, values);
+
+      res.status(200).json({ message: 'capsule updated successfully' });
+
     } catch (err) {
       console.error("Error updating capsule:", err);
       res.status(500).json({ error: "Server error" });
@@ -299,17 +374,19 @@ app.delete('/delete-capsule/:id', async (req, res) => {
  
       
 // milk-frother 
-app.post('/add-milk-frother', async (req, res) => {
+app.post('/add-milk-frother',upload.single('image'), async (req, res) => {
     try {
-      const { name, color, frothing_type, capacity, price, image_path } = req.body;
+      const { name, color, frothing_type, capacity, price } = req.body;
+      const imageBuffer = req.file.buffer;
+
   
-      const result = await pool.query(
-        `INSERT INTO milk_frothers (name, color, frothing_type, capacity, price, image_path)
+      await pool.query(
+        `INSERT INTO milk_frothers (name, color, frothing_type, capacity, price, image)
          VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-        [name, color, frothing_type, capacity, price, image_path]
+        [name, color, frothing_type, capacity, price, imageBuffer]
       );
   
-      res.status(201).json({ message: "Milk frother added successfully", frother: result.rows[0] });
+      res.status(201).json({ message: "Milk frother added successfully" });
     } catch (err) {
       console.error("Error inserting milk frother:", err);
       res.status(500).json({ error: "Server error" });
@@ -320,11 +397,23 @@ app.get('/get-milk-frother/:id', async (req, res) => {
     const { id } = req.params;
   
     try {
-      const result = await pool.query("SELECT * FROM milk_frothers WHERE id = $1", [id]);
+      const result = await pool.query("SELECT id, name, color, frothing_type, capacity, price, image FROM milk_frothers WHERE id = $1", [id]);
       if (result.rows.length === 0) {
         return res.status(404).json({ message: "Milk frother not found" });
       }
-      res.json(result.rows[0]);
+
+      const milk_frother = result.rows[0];
+      const milk_frotherData = {
+      id: milk_frother.id,
+      name: milk_frother.name,
+      color: milk_frother.color,
+      frothing_type: milk_frother.frothing_type,
+      capacity: milk_frother.capacity,
+      price: milk_frother.price,
+      image_url: `data:image/jpeg;base64,${Buffer.from(milk_frother.image).toString('base64')}`     
+     };
+
+      res.json(milk_frotherData);
     } catch (err) {
       console.error("Error fetching milk frother:", err);
       res.status(500).json({ message: "Server error" });
@@ -333,26 +422,81 @@ app.get('/get-milk-frother/:id', async (req, res) => {
 
 app.get('/get-all-milk-frothers', async (req, res) => {
     try {
-      const result = await pool.query('SELECT * FROM milk_frothers');
-      res.status(200).json(result.rows);
+      const result = await pool.query('SELECT id, name, color, frothing_type, capacity, price, image FROM milk_frothers');
+
+      const milk_frothers = result.rows.map(milk_frother => ({
+        id: milk_frother.id,
+        name: milk_frother.name,
+        color: milk_frother.color,
+        frothing_type: milk_frother.frothing_type,
+        capacity: milk_frother.capacity,
+        price: milk_frother.price,
+        image: Buffer.from(milk_frother.image).toString('base64')
+
+      }));
+      res.json(milk_frothers);
     } catch (err) {
       console.error('Error fetching milk frothers:', err);
       res.status(500).send('Failed to fetch milk frothers');
     }
   });
 
-app.put('/update-milk-frother/:id', async (req, res) => {
+app.put('/update-milk-frother/:id', upload.single('image'), async (req, res) => {
     const { id } = req.params;
-    const { name, color, frothing_type, capacity, price, image_path } = req.body;
+    const { name, color, frothing_type, capacity, price } = req.body;
     try {
-      const result = await pool.query(
-        `UPDATE milk_frothers SET name = $1, color = $2, frothing_type = $3, capacity = $4, price = $5, image_path = $6 WHERE id = $7 RETURNING *`,
-        [name, color, frothing_type, capacity, price, image_path, id]
-      );
-      if (result.rows.length === 0) {
-        return res.status(404).json({ message: "Frother not found" });
-      }
-      res.json({ message: "Frother updated", frother: result.rows[0] });
+
+      const existingResult = await pool.query(
+        `SELECT * FROM milk_frothers WHERE id = $1`,
+        [id]
+        );
+    
+        if (existingResult.rows.length === 0) {
+        return res.status(404).json({ message: 'milk_frother not found' });
+        }
+    
+        const existing = existingResult.rows[0];
+    
+        // step 2: Check if any changes were made
+        const noChange =
+        existing.name === name &&
+        (existing.color || '') === (color || '') &&
+        existing.frothing_type === frothing_type &&
+        existing.capacity === capacity &&
+        Number(existing.price) === Number(price) &&
+        !req.file; 
+    
+        if (noChange) {
+        return res.status(200).json({ message: 'No changes detected, nothing was updated.' });
+        }
+
+        let query = `
+        UPDATE milk_frothers SET
+        name = $1,
+        color = $2,
+        frothing_type = $3,
+        capacity = $4,
+        price = $5
+        `;
+        const values = [
+        name,
+        color,
+        frothing_type,
+        capacity,
+        price
+        ];
+
+
+        if (req.file) {
+        query += `, image = $6 WHERE id = $7`;
+        values.push(req.file.buffer, id);
+        } else {
+        query += ` WHERE id = $6`;
+        values.push(id);
+        }
+
+      await pool.query(query, values);
+      res.status(200).json({ message: 'milk_frother updated successfully' });
     } catch (err) {
       console.error("Error updating frother:", err);
       res.status(500).json({ error: "Server error" });
