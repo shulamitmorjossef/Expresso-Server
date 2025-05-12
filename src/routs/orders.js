@@ -1,4 +1,3 @@
-// src/routes/orders.js
 import express from 'express';
 import pool from '../data-access/db.js';
 import { sendOrderConfirmationEmail } from '../utils/mailer.js';

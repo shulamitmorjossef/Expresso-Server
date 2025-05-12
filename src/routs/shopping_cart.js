@@ -54,12 +54,16 @@ app.get('/get-cart/:userId', async (req, res) => {
         sc.product_type,
         COALESCE(c.name, m.name, f.name) as name,
         COALESCE(c.price, m.price, f.price) as price,
+<<<<<<< HEAD
         CASE
           WHEN sc.product_type = 'capsules' THEN c.image
           WHEN sc.product_type = 'coffee_machines' THEN m.image
           WHEN sc.product_type = 'milk_frothers' THEN f.image
           ELSE NULL
         END as image
+=======
+        COALESCE(c.image, m.image, f.image) as image
+>>>>>>> 11559d2894ce800a4ac809edddef98ed8be4028d
       FROM shopping_cart sc
       LEFT JOIN capsules c ON sc.product_type = 'capsules' AND sc.product_id = c.id
       LEFT JOIN coffee_machines m ON sc.product_type = 'coffee_machines' AND sc.product_id = m.id
@@ -67,6 +71,7 @@ app.get('/get-cart/:userId', async (req, res) => {
       WHERE sc.user_id = $1
     `, [userId]);
 
+<<<<<<< HEAD
     // Convert images to base64
     const cartItems = result.rows.map(item => ({
       ...item,
@@ -74,6 +79,14 @@ app.get('/get-cart/:userId', async (req, res) => {
     }));
 
     res.status(200).json(cartItems);
+=======
+    const cartWithBase64Images = result.rows.map(item => ({
+      ...item,
+      image: item.image ? Buffer.from(item.image).toString('base64') : null
+    }));
+
+    res.status(200).json(cartWithBase64Images);
+>>>>>>> 11559d2894ce800a4ac809edddef98ed8be4028d
   } catch (err) {
     console.error("Error fetching cart:", err);
     res.status(500).json({ error: "Server error" });
