@@ -218,12 +218,14 @@ router.get('/get-order-details/:orderId', async (req, res) => {
       `SELECT o.id AS order_id, o.status, o.order_date, u.email
          FROM orders o
          JOIN users u ON o.user_id = u.id
-        WHERE o.id = $1`,
+         WHERE o.id = $1`,
       [orderId]
     );
+
     if (orderRes.rows.length === 0) {
       return res.status(404).json({ error: 'Order not found' });
     }
+
     const order = orderRes.rows[0];
 
     const productsRes = await pool.query(
@@ -233,7 +235,7 @@ router.get('/get-order-details/:orderId', async (req, res) => {
          op.quantity,
          COALESCE(cm.name, mf.name, c.name) AS product_name,
          COALESCE(cm.price, mf.price, c.price) AS price,
-         COALESCE(cm.image_path, mf.image_path, c.image_path) AS image_path
+         COALESCE(cm.image, mf.image, c.image) AS image -- this is BYTEA
        FROM ordered_products op
        LEFT JOIN coffee_machines cm 
          ON op.product_type = 'coffee_machines' AND cm.id = op.product_id
@@ -244,7 +246,13 @@ router.get('/get-order-details/:orderId', async (req, res) => {
        WHERE op.order_id = $1`,
       [orderId]
     );
-    order.products = productsRes.rows;
+
+    const products = productsRes.rows.map(p => ({
+      ...p,
+      image: p.image ? Buffer.from(p.image).toString('base64') : null
+    }));
+
+    order.products = products;
 
     res.json(order);
   } catch (err) {

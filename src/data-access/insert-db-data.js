@@ -4,12 +4,16 @@ const editCapsulesTable = async () => {
     try {
         await pool.query(`
 
-          DROP TABLE IF EXISTS coupons;
+          ALTER TABLE capsules
+          DROP COLUMN image_path;
 
-            CREATE TABLE coupons (
-            codename TEXT PRIMARY KEY,
-            discount_percent INTEGER NOT NULL CHECK (discount_percent BETWEEN 1 AND 99)
-            );
+          ALTER TABLE coffee_machines
+          DROP COLUMN image_path;
+
+          ALTER TABLE milk_frothers
+          DROP COLUMN image_path;
+
+
 
 
         `);
