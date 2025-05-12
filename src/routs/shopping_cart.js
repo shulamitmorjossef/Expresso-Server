@@ -57,7 +57,7 @@ app.get('/get-cart/:userId', async (req, res) => {
         sc.product_type,
         COALESCE(c.name, m.name, f.name) as name,
         COALESCE(c.price, m.price, f.price) as price,
-        COALESCE(c.image_path, m.image_path, f.image_path) as image_path
+        COALESCE(c.image, m.image, f.image) as image
       FROM shopping_cart sc
       LEFT JOIN capsules c ON sc.product_type = 'capsules' AND sc.product_id = c.id
       LEFT JOIN coffee_machines m ON sc.product_type = 'coffee_machines' AND sc.product_id = m.id
@@ -65,7 +65,12 @@ app.get('/get-cart/:userId', async (req, res) => {
       WHERE sc.user_id = $1
     `, [userId]);
 
-    res.status(200).json(result.rows);
+    const cartWithBase64Images = result.rows.map(item => ({
+      ...item,
+      image: item.image ? Buffer.from(item.image).toString('base64') : null
+    }));
+
+    res.status(200).json(cartWithBase64Images);
   } catch (err) {
     console.error("❌ Error fetching cart:", err);
     res.status(500).json({ error: "Server error" });
