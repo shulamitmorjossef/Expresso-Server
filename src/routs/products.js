@@ -135,7 +135,7 @@ app.put('/update-coffee-machine/:id', upload.single('image'), async (req, res) =
 
 app.get('/get-all-coffee-machines', async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, name, color, capacity, price, image FROM coffee_machines ');
+    const result = await pool.query('SELECT id, name, color, capacity, price, image, sum_of FROM coffee_machines ');
     
   
     const coffeeMachines = result.rows.map(p => ({
@@ -144,6 +144,7 @@ app.get('/get-all-coffee-machines', async (req, res) => {
       color: p.color,
       capacity: p.capacity,
       price: p.price,
+      sum_of: p.sum_of,
       image: Buffer.from(p.image).toString('base64')
     }));
     res.json(coffeeMachines);
@@ -256,7 +257,7 @@ app.get("/get-capsule/:id", async (req, res) => {
 
 app.get('/get-all-capsule', async (req, res) => {
     try {
-      const result = await pool.query('SELECT id, name, flavor, quantity_per_package, net_weight_grams, price, ingredients, image FROM capsules');
+      const result = await pool.query('SELECT id, name, flavor, quantity_per_package, net_weight_grams, price, ingredients, image, sum_of FROM capsules');
       
         const capsules = result.rows.map(capsule => ({
         id: capsule.id,
@@ -266,6 +267,7 @@ app.get('/get-all-capsule', async (req, res) => {
         net_weight_grams: capsule.net_weight_grams,
         price: capsule.price,
         ingredients: capsule.ingredients,
+        sum_of: capsule.sum_of,
         image: Buffer.from(capsule.image).toString('base64')
 
       }));
@@ -422,7 +424,7 @@ app.get('/get-milk-frother/:id', async (req, res) => {
 
 app.get('/get-all-milk-frothers', async (req, res) => {
     try {
-      const result = await pool.query('SELECT id, name, color, frothing_type, capacity, price, image FROM milk_frothers');
+      const result = await pool.query('SELECT id, name, color, frothing_type, capacity, price, image, sum_of FROM milk_frothers');
 
       const milk_frothers = result.rows.map(milk_frother => ({
         id: milk_frother.id,
@@ -431,6 +433,7 @@ app.get('/get-all-milk-frothers', async (req, res) => {
         frothing_type: milk_frother.frothing_type,
         capacity: milk_frother.capacity,
         price: milk_frother.price,
+        sum_of:milk_frother.sum_of,
         image: Buffer.from(milk_frother.image).toString('base64')
 
       }));
@@ -565,7 +568,7 @@ app.delete('/delete-milk-frother/:id', async (req, res) => {
   
       res.json(products);
     } catch (err) {
-      console.error('❌ Error searching products:', err);
+      console.error(' Error searching products:', err);
       res.status(500).json({ error: 'Server error' });
     }
   });

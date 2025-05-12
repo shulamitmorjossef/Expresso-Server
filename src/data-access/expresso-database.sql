@@ -51,7 +51,8 @@ CREATE TABLE IF NOT EXISTS milk_frothers (
   frothing_type TEXT,
   capacity INTEGER,
   price NUMERIC(10, 2),
-  sum_of INTEGER DEFAULT 0
+  image_path TEXT,
+  sum_of INTEGER DEFAULT 0,
   image BYTEA NOT NULL
 
 );
@@ -64,7 +65,7 @@ CREATE TABLE IF NOT EXISTS capsules (
   net_weight_grams NUMERIC(10, 2),
   price NUMERIC(10, 2),
   ingredients TEXT,
-  sum_of INTEGER DEFAULT 0
+  sum_of INTEGER DEFAULT 0,
   image BYTEA NOT NULL
 
 

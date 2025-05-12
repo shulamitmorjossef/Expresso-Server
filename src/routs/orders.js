@@ -70,7 +70,7 @@ router.post('/confirm-order/:userId', async (req, res) => {
     });
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error('❌ Error confirming order:', err);
+    console.error('Error confirming order:', err);
     res.status(500).json({ error: 'Server error during order confirmation' });
   } finally {
     client.release();
@@ -96,7 +96,7 @@ router.post('/add-order', async (req, res) => {
     );
     res.status(201).json({ order: result.rows[0] });
   } catch (err) {
-    console.error('❌ Error inserting order:', err);
+    console.error('Error inserting order:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -112,7 +112,7 @@ router.get('/get-all-orders', async (req, res) => {
     );
     res.json(result.rows);
   } catch (err) {
-    console.error('❌ Error fetching orders:', err);
+    console.error('Error fetching orders:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -141,7 +141,7 @@ router.post('/add-ordered-product', async (req, res) => {
     );
     res.status(201).json({ orderedProduct: result.rows[0] });
   } catch (err) {
-    console.error('❌ Error inserting ordered product:', err);
+    console.error('Error inserting ordered product:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -159,7 +159,7 @@ router.get('/get-all-ordered-products', async (req, res) => {
     );
     res.json(result.rows);
   } catch (err) {
-    console.error('❌ Error fetching ordered products:', err);
+    console.error('Error fetching ordered products:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -173,7 +173,7 @@ router.delete('/delete-all-orders', async (req, res) => {
     await pool.query('DELETE FROM orders');
     res.json({ message: '🗑️ All orders deleted successfully' });
   } catch (err) {
-    console.error('❌ Error deleting orders:', err);
+    console.error('Error deleting orders:', err);
     res.status(500).json({ error: 'Server error while deleting orders' });
   }
 });
@@ -201,7 +201,7 @@ router.put('/set-status-order/:orderId', async (req, res) => {
     }
     res.json({ message: 'Order status updated', order: result.rows[0] });
   } catch (err) {
-    console.error('❌ Error updating order status:', err);
+    console.error('Error updating order status:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -255,7 +255,7 @@ router.get('/get-order-details/:orderId', async (req, res) => {
 
     res.json(order);
   } catch (err) {
-    console.error('❌ Error fetching order details:', err);
+    console.error('Error fetching order details:', err);
     res.status(500).json({ error: 'Server error fetching order details' });
   }
 });
@@ -295,7 +295,7 @@ router.get('/best-sellers', async (req, res) => {
     if (!rows.length) return res.json({ message: 'No data for selected period.' });
     res.json(rows);
   } catch (err) {
-    console.error('❌ Error fetching best sellers:', err);
+    console.error('Error fetching best sellers:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -324,7 +324,7 @@ router.get('/search-products', async (req, res) => {
     `, [q]);
     res.json(result.rows);
   } catch (err) {
-    console.error('❌ Error searching products:', err);
+    console.error('Error searching products:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -347,7 +347,7 @@ router.get('/orders/:userId', async (req, res) => {
 
     res.status(200).json(result.rows);
   } catch (err) {
-    console.error('❌ Error fetching orders:', err);
+    console.error('Error fetching orders:', err);
     res.status(500).json({ error: 'Failed to fetch orders' });
   }
 });
@@ -375,7 +375,7 @@ router.get('/orders/full/:userId', async (req, res) => {
 
     res.json(orders.rows);
   } catch (err) {
-    console.error('❌ Error loading orders with total:', err);
+    console.error('Error loading orders with total:', err);
     res.status(500).json({ error: 'Failed to load orders' });
   }
 });
@@ -430,7 +430,7 @@ router.delete('/cancel-order/:orderId', async (req, res) => {
 
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error('❌ Failed to cancel order:', err);
+    console.error('Failed to cancel order:', err);
     res.status(500).json({ error: 'Failed to cancel order' });
   } finally {
     client.release();
