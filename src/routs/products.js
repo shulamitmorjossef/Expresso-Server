@@ -558,9 +558,8 @@ app.delete('/delete-milk-frother/:id', async (req, res) => {
   
       const products = result.rows.map(p => ({
         ...p,
-        image: p.image
-        ? `data:image/png;base64,${Buffer.from(p.image).toString('base64')}`
-        : null
+          image: p.image ? Buffer.from(p.image).toString('base64') : null
+
 
       }));
   
