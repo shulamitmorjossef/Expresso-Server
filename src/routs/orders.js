@@ -207,6 +207,8 @@ router.put('/set-status-order/:orderId', async (req, res) => {
 });
 
 
+
+
 /**
  * 8) Get order details with products & user email
  */
@@ -267,6 +269,40 @@ router.get('/get-order-details/:orderId', async (req, res) => {
  */
 // in src/routes/orders.js (or statistics.js)
 
+// router.get('/best-sellers', async (req, res) => {
+//   const { startDate, endDate } = req.query;
+//   if (!startDate || !endDate) {
+//     return res.status(400).json({ error: 'Missing date range' });
+//   }
+
+//   const sql = `
+//     SELECT
+//       op.product_type,
+//       op.product_id,
+//       SUM(op.quantity) AS total_sold,
+//       -- grab the image and name from the correct table
+//       COALESCE(cm.name, mf.name, c.name)     AS name,
+//       COALESCE(cm.image_path, mf.image_path, c.image_path) AS image_path
+//     FROM ordered_products op
+//     JOIN orders o    ON o.id = op.order_id
+//     LEFT JOIN coffee_machines   cm ON op.product_type='coffee_machines' AND cm.id=op.product_id
+//     LEFT JOIN milk_frothers     mf ON op.product_type='milk_frothers'   AND mf.id=op.product_id
+//     LEFT JOIN capsules          c  ON op.product_type='capsules'        AND c.id=op.product_id
+//     WHERE o.order_date BETWEEN $1 AND $2
+//     GROUP BY op.product_type, op.product_id, cm.name, mf.name, c.name, cm.image, mf.image, c.image
+//     ORDER BY total_sold DESC
+//   `;
+//   try {
+//     const { rows } = await pool.query(sql, [startDate, endDate]);
+//     if (!rows.length) return res.json({ message: 'No data for selected period.' });
+//     res.json(rows);
+//   } catch (err) {
+//     console.error('Error fetching best sellers:', err);
+//     res.status(500).json({ error: 'Server error' });
+//   }
+// });
+
+
 router.get('/best-sellers', async (req, res) => {
   const { startDate, endDate } = req.query;
   if (!startDate || !endDate) {
@@ -278,27 +314,36 @@ router.get('/best-sellers', async (req, res) => {
       op.product_type,
       op.product_id,
       SUM(op.quantity) AS total_sold,
-      -- grab the image and name from the correct table
-      COALESCE(cm.name, mf.name, c.name)     AS name,
-      COALESCE(cm.image_path, mf.image_path, c.image_path) AS image_path
+      COALESCE(cm.name, mf.name, c.name) AS name,
+      COALESCE(cm.image, mf.image, c.image) AS image
     FROM ordered_products op
-    JOIN orders o    ON o.id = op.order_id
-    LEFT JOIN coffee_machines   cm ON op.product_type='coffee_machines' AND cm.id=op.product_id
-    LEFT JOIN milk_frothers     mf ON op.product_type='milk_frothers'   AND mf.id=op.product_id
-    LEFT JOIN capsules          c  ON op.product_type='capsules'        AND c.id=op.product_id
+    JOIN orders o ON o.id = op.order_id
+    LEFT JOIN coffee_machines cm ON op.product_type = 'coffee_machines' AND cm.id = op.product_id
+    LEFT JOIN milk_frothers mf ON op.product_type = 'milk_frothers' AND mf.id = op.product_id
+    LEFT JOIN capsules c ON op.product_type = 'capsules' AND c.id = op.product_id
     WHERE o.order_date BETWEEN $1 AND $2
-    GROUP BY op.product_type, op.product_id, cm.name, mf.name, c.name, cm.image_path, mf.image_path, c.image_path
+    GROUP BY op.product_type, op.product_id, cm.name, mf.name, c.name, cm.image, mf.image, c.image
     ORDER BY total_sold DESC
   `;
+  
   try {
     const { rows } = await pool.query(sql, [startDate, endDate]);
     if (!rows.length) return res.json({ message: 'No data for selected period.' });
-    res.json(rows);
+
+    const productsWithBase64 = rows.map(product => ({
+      ...product,
+      image: product.image ? product.image.toString('base64') : null,
+    }));
+
+    res.json(productsWithBase64); 
   } catch (err) {
     console.error('Error fetching best sellers:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+
+
 
 
 
@@ -328,6 +373,8 @@ router.get('/search-products', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+
 
 
 /**

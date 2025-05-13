@@ -42,9 +42,6 @@ app.post('/add-to-cart', async (req, res) => {
 });
 
 
-
-
- 
 app.get('/get-cart/:userId', async (req, res) => {
   const { userId } = req.params;
 
@@ -65,6 +62,7 @@ app.get('/get-cart/:userId', async (req, res) => {
       WHERE sc.user_id = $1
     `, [userId]);
 
+
     const cartWithBase64Images = result.rows.map(item => ({
       ...item,
       image: item.image ? Buffer.from(item.image).toString('base64') : null
@@ -72,10 +70,11 @@ app.get('/get-cart/:userId', async (req, res) => {
 
     res.status(200).json(cartWithBase64Images);
   } catch (err) {
-    console.error("❌ Error fetching cart:", err);
+    console.error("Error fetching cart:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
+
 
 
 app.get('/get-all-shopping-carts', async (req, res) => {
