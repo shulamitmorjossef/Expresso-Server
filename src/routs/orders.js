@@ -105,17 +105,46 @@ router.post('/add-order', async (req, res) => {
 /**
  * 3) List all orders
  */
+// router.get('/get-all-orders', async (req, res) => {
+//   try {
+//     const result = await pool.query(
+//       `SELECT * FROM orders ORDER BY order_date DESC`
+//     );
+//     res.json(result.rows);
+//   } catch (err) {
+//     console.error('Error fetching orders:', err);
+//     res.status(500).json({ error: 'Server error' });
+//   }
+// });
+
+
+
 router.get('/get-all-orders', async (req, res) => {
+
   try {
-    const result = await pool.query(
-      `SELECT * FROM orders ORDER BY order_date DESC`
-    );
-    res.json(result.rows);
+    const orders = await pool.query(`
+      SELECT o.id, o.order_date, o.status,
+        COALESCE(SUM(p.price * op.quantity), 0) AS total
+      FROM orders o
+      LEFT JOIN ordered_products op ON o.id = op.order_id
+      LEFT JOIN (
+        SELECT id, price, 'coffee_machines' AS type FROM coffee_machines
+        UNION ALL
+        SELECT id, price, 'milk_frothers' FROM milk_frothers
+        UNION ALL
+        SELECT id, price, 'capsules' FROM capsules
+      ) p ON p.id = op.product_id AND p.type = op.product_type
+      GROUP BY o.id
+      ORDER BY o.order_date DESC
+    `);
+
+    res.json(orders.rows);
   } catch (err) {
-    console.error('Error fetching orders:', err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('Error loading orders with total:', err);
+    res.status(500).json({ error: 'Failed to load orders' });
   }
-});
+  });
+
 
 
 /**
