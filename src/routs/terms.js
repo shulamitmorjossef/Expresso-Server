@@ -3,6 +3,7 @@ import pool from '../data-access/db.js';
 
 const app = express.Router();
 
+
 app.get('/terms', async (req, res) => {
     try {
       const result = await pool.query('SELECT * FROM terms LIMIT 1');
