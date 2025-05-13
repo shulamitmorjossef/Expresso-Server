@@ -6,7 +6,7 @@ const router = express.Router();
 router.use(express.json());
 
 // Confirm order: 
- 
+
 router.post('/confirm-order/:userId', async (req, res) => {
   const { userId } = req.params;
   const client = await pool.connect();
@@ -302,7 +302,6 @@ router.get('/get-order-details/:orderId', async (req, res) => {
 //   }
 // });
 
-
 router.get('/best-sellers', async (req, res) => {
   const { startDate, endDate } = req.query;
   if (!startDate || !endDate) {
@@ -322,10 +321,15 @@ router.get('/best-sellers', async (req, res) => {
     LEFT JOIN milk_frothers mf ON op.product_type = 'milk_frothers' AND mf.id = op.product_id
     LEFT JOIN capsules c ON op.product_type = 'capsules' AND c.id = op.product_id
     WHERE o.order_date BETWEEN $1 AND $2
+    AND (
+      cm.image IS NOT NULL
+      OR mf.image IS NOT NULL
+      OR c.image IS NOT NULL
+    )
     GROUP BY op.product_type, op.product_id, cm.name, mf.name, c.name, cm.image, mf.image, c.image
     ORDER BY total_sold DESC
   `;
-  
+
   try {
     const { rows } = await pool.query(sql, [startDate, endDate]);
     if (!rows.length) return res.json({ message: 'No data for selected period.' });
@@ -335,16 +339,12 @@ router.get('/best-sellers', async (req, res) => {
       image: product.image ? product.image.toString('base64') : null,
     }));
 
-    res.json(productsWithBase64); 
+    res.json(productsWithBase64);
   } catch (err) {
     console.error('Error fetching best sellers:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
-
-
-
-
 
 
 /**
@@ -436,7 +436,7 @@ router.delete('/cancel-order/:orderId', async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    
+
     const orderCheck = await client.query(
       `SELECT * FROM orders WHERE id = $1`,
       [orderId]
@@ -445,7 +445,7 @@ router.delete('/cancel-order/:orderId', async (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    
+
     const productsRes = await client.query(
       `SELECT product_id, product_type, quantity
        FROM ordered_products
@@ -453,7 +453,7 @@ router.delete('/cancel-order/:orderId', async (req, res) => {
       [orderId]
     );
 
-    
+
     for (const item of productsRes.rows) {
       const { product_id, product_type, quantity } = item;
       await client.query(
