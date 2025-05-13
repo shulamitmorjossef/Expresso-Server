@@ -549,21 +549,19 @@ app.delete('/delete-milk-frother/:id', async (req, res) => {
       const q = `%${query}%`;
   
       const result = await pool.query(`
-        SELECT id, name, price, image, 'coffee_machines' AS type
+        SELECT id, name, price, sum_of, image, 'coffee_machines' AS type
           FROM coffee_machines WHERE name ILIKE $1
         UNION ALL
-        SELECT id, name, price, image, 'capsules' AS type
+        SELECT id, name, price, sum_of, image, 'capsules' AS type
           FROM capsules WHERE name ILIKE $1
         UNION ALL
-        SELECT id, name, price, image, 'milk_frothers' AS type
+        SELECT id, name, price, sum_of, image, 'milk_frothers' AS type
           FROM milk_frothers WHERE name ILIKE $1
       `, [q]);
   
       const products = result.rows.map(p => ({
         ...p,
-          image: p.image ? Buffer.from(p.image).toString('base64') : null
-
-
+        image: p.image ? Buffer.from(p.image).toString('base64') : null
       }));
   
       res.json(products);
@@ -575,6 +573,83 @@ app.delete('/delete-milk-frother/:id', async (req, res) => {
   
   
 
-
-
+  app.get('/capsules-by-popularity', async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT 
+          c.id,
+          c.name,
+          c.flavor,
+          c.quantity_per_package,
+          c.net_weight_grams,
+          c.price,
+          c.ingredients,
+          c.sum_of,
+          c.image,
+          COALESCE(SUM(op.quantity), 0) AS total_sold
+        FROM capsules c
+        LEFT JOIN ordered_products op 
+          ON op.product_id = c.id AND op.product_type = 'capsules'
+        GROUP BY c.id
+        ORDER BY total_sold DESC
+      `);
+      const capsules = result.rows.map(p => ({
+        ...p,
+        image: p.image ? Buffer.from(p.image).toString('base64') : null
+      }));
+      res.json(capsules);
+    } catch (err) {
+      console.error('Error fetching capsules by popularity:', err);
+      res.status(500).json({ error: 'Server error' });
+    }
+  });
+  
+  app.get('/coffee-machines-by-popularity', async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT c.*, 
+               COALESCE(SUM(op.quantity), 0) AS total_sold
+        FROM coffee_machines c
+        LEFT JOIN ordered_products op
+          ON c.id = op.product_id AND op.product_type = 'coffee_machines'
+        GROUP BY c.id
+        ORDER BY total_sold DESC;
+      `);
+  
+      const machines = result.rows.map(p => ({
+        ...p,
+        image: p.image ? Buffer.from(p.image).toString('base64') : null
+      }));
+  
+      res.json(machines);
+    } catch (err) {
+      console.error("Error fetching coffee machines by popularity:", err);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+  app.get('/milk-frothers-by-popularity', async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT mf.*, 
+               COALESCE(SUM(op.quantity), 0) AS total_sold
+        FROM milk_frothers mf
+        LEFT JOIN ordered_products op
+          ON mf.id = op.product_id AND op.product_type = 'milk_frothers'
+        GROUP BY mf.id
+        ORDER BY total_sold DESC;
+      `);
+  
+      const frothers = result.rows.map(p => ({
+        ...p,
+        image: p.image ? Buffer.from(p.image).toString('base64') : null
+      }));
+  
+      res.json(frothers);
+    } catch (err) {
+      console.error("Error fetching milk frothers by popularity:", err);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+  
+  
 export default app;
