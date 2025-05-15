@@ -4,6 +4,49 @@ import { generateRandomPassword } from '../utils/passwordUtils.js';
 import { sendResetEmail } from '../utils/mailer.js';
 
 const app = express.Router();
+app.put('/update-user-detail/:username', async (req, res) => {
+  const oldUsername = req.params.username;
+  const { full_name, username: newUsername, email, phone, password } = req.body;
+
+  try {
+    const result = await pool.query('SELECT * FROM users WHERE username = $1', [oldUsername]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const existingUser = result.rows[0];
+
+    // Check if the new username already exists (and it's not the same user)
+    if (newUsername && newUsername !== oldUsername) {
+      const checkUsername = await pool.query('SELECT * FROM users WHERE username = $1', [newUsername]);
+      if (checkUsername.rows.length > 0) {
+        return res.status(409).json({ success: false, message: 'Username already taken' });
+      }
+    }
+
+    const updatedResult = await pool.query(
+      `UPDATE users 
+       SET full_name = $1, username = $2, email = $3, phone = $4, password = $5 
+       WHERE username = $6 RETURNING *`,
+      [
+        full_name ?? existingUser.full_name,
+        newUsername ?? oldUsername,
+        email ?? existingUser.email,
+        phone ?? existingUser.phone,
+        password ?? existingUser.password,
+        oldUsername
+      ]
+    );
+
+    const updatedUser = updatedResult.rows[0];
+    res.status(200).json({ success: true, user: updatedUser });
+
+  } catch (err) {
+    console.error('Error updating user:', err);
+    res.status(500).json({ success: false, message: 'Failed to update user details' });
+  }
+});
 
 // Get data
 app.get('/users', async (req, res) => {
