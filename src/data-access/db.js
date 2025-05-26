@@ -7,7 +7,7 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   
   ssl: {
-    rejectUnauthorized: false // שים לב שזה נדרש כשאתה עובד עם שירותי ענן כמו Render
+    rejectUnauthorized: false 
   }
 });
 
@@ -18,8 +18,8 @@ pool.connect()
   })
   .catch((err) => {
     console.error('Failed to connect to the database:', err);
-    console.error('Error code:', err.code);  // מציג את הקוד של השגיאה
-    console.error('Error stack trace:', err.stack);  // מציג את עקבות השגיאה
+    console.error('Error code:', err.code);  
+    console.error('Error stack trace:', err.stack); 
   });
 
 

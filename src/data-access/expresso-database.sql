@@ -68,13 +68,13 @@ CREATE TABLE IF NOT EXISTS capsules (
   sum_of INTEGER DEFAULT 0,
   image BYTEA NOT NULL
 
-
 );
 
 
 CREATE TABLE IF NOT EXISTS coupons (
   codename TEXT PRIMARY KEY,
-  discount_percent NUMERIC(5, 2) NOT NULL CHECK (discount_percent >= 0 AND discount_percent <= 100)
+  discount_percent NUMERIC(5, 2) NOT NULL CHECK (discount_percent >= 0 AND discount_percent <= 100),
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS delivery_dates (
