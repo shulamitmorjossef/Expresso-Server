@@ -110,9 +110,17 @@ CREATE TABLE IF NOT EXISTS shopping_cart (
 
 );
 
+CREATE TABLE price_periods (
+  id SERIAL PRIMARY KEY,
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  percentage_change FLOAT NOT NULL, -- למשל 10% העלאה או -15% הנחה
+);
+
 CREATE TABLE IF NOT EXISTS reviews (
   id SERIAL PRIMARY KEY,
   content TEXT NOT NULL,
+
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

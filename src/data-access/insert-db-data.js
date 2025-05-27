@@ -3,8 +3,13 @@ import pool from './db.js';
 const editCapsulesTable = async () => {
     try {
         await pool.query(`
-            ALTER TABLE coupons
-            ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE CASCADE;
+           CREATE TABLE price_periods (
+            id SERIAL PRIMARY KEY,
+            start_date DATE NOT NULL,
+            end_date DATE NOT NULL,
+            percentage_change FLOAT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
 
         `);
 

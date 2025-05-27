@@ -133,26 +133,58 @@ app.put('/update-coffee-machine/:id', upload.single('image'), async (req, res) =
   }
 });
 
-app.get('/get-all-coffee-machines', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT id, name, color, capacity, price, image, sum_of FROM coffee_machines ');
+// app.get('/get-all-coffee-machines', async (req, res) => {
+//   try {
+//     const result = await pool.query('SELECT id, name, color, capacity, price, image, sum_of FROM coffee_machines ');
     
   
-    const coffeeMachines = result.rows.map(p => ({
-      id: p.id,
-      name: p.name,
-      color: p.color,
-      capacity: p.capacity,
-      price: p.price,
-      sum_of: p.sum_of,
-      image: Buffer.from(p.image).toString('base64')
-    }));
+//     const coffeeMachines = result.rows.map(p => ({
+//       id: p.id,
+//       name: p.name,
+//       color: p.color,
+//       capacity: p.capacity,
+//       price: p.price,
+//       sum_of: p.sum_of,
+//       image: Buffer.from(p.image).toString('base64')
+//     }));
+//     res.json(coffeeMachines);
+// } catch (err) {
+//     console.error('Failed to fetch products', err);
+//     res.status(500).send('Server error');
+// }
+// });
+
+app.get('/get-all-coffee-machines', async (req, res) => {
+  try {
+    const currentDate = new Date();
+
+    const [machinesResult, pricePeriodsResult] = await Promise.all([
+      pool.query('SELECT id, name, color, capacity, price, image, sum_of FROM coffee_machines'),
+      pool.query('SELECT start_date, end_date, percentage_change FROM price_periods')
+    ]);
+
+    const pricePeriods = pricePeriodsResult.rows;
+
+    const coffeeMachines = machinesResult.rows.map(p => {
+      const adjustedPrice = getAdjustedPrice(parseFloat(p.price), currentDate, pricePeriods);
+      return {
+        id: p.id,
+        name: p.name,
+        color: p.color,
+        capacity: p.capacity,
+        price: adjustedPrice.toFixed(2), 
+        sum_of: p.sum_of,
+        image: Buffer.from(p.image).toString('base64')
+      };
+    });
+
     res.json(coffeeMachines);
-} catch (err) {
+  } catch (err) {
     console.error('Failed to fetch products', err);
     res.status(500).send('Server error');
-}
+  }
 });
+
 
 app.put('/update-coffee-machine-stock/:id', async (req, res) => {
     const { id } = req.params;
@@ -255,27 +287,60 @@ app.get("/get-capsule/:id", async (req, res) => {
     }
 });
 
-app.get('/get-all-capsule', async (req, res) => {
-    try {
-      const result = await pool.query('SELECT id, name, flavor, quantity_per_package, net_weight_grams, price, ingredients, image, sum_of FROM capsules');
+// app.get('/get-all-capsule', async (req, res) => {
+//     try {
+//       const result = await pool.query('SELECT id, name, flavor, quantity_per_package, net_weight_grams, price, ingredients, image, sum_of FROM capsules');
       
-        const capsules = result.rows.map(capsule => ({
+//         const capsules = result.rows.map(capsule => ({
+//         id: capsule.id,
+//         name: capsule.name,
+//         flavor: capsule.flavor,
+//         quantity_per_package: capsule.quantity_per_package,
+//         net_weight_grams: capsule.net_weight_grams,
+//         price: capsule.price,
+//         ingredients: capsule.ingredients,
+//         sum_of: capsule.sum_of,
+//         image: Buffer.from(capsule.image).toString('base64')
+
+//       }));
+//       res.json(capsules);
+//     } catch (err) {
+//       console.error('Error fetching users:', err);
+//       res.status(500).send('Failed to fetch v');
+//     }
+// });
+
+app.get('/get-all-capsule', async (req, res) => {
+  try {
+    const currentDate = new Date();
+
+    const [capsuleResult, pricePeriodsResult] = await Promise.all([
+      pool.query('SELECT id, name, flavor, quantity_per_package, net_weight_grams, price, ingredients, image, sum_of FROM capsules'),
+      pool.query('SELECT start_date, end_date, percentage_change FROM price_periods')
+    ]);
+
+    const pricePeriods = pricePeriodsResult.rows;
+
+    const capsules = capsuleResult.rows.map(capsule => {
+      const adjustedPrice = getAdjustedPrice(parseFloat(capsule.price), currentDate, pricePeriods);
+      return {
         id: capsule.id,
         name: capsule.name,
         flavor: capsule.flavor,
         quantity_per_package: capsule.quantity_per_package,
         net_weight_grams: capsule.net_weight_grams,
-        price: capsule.price,
+        price: adjustedPrice.toFixed(2),
         ingredients: capsule.ingredients,
         sum_of: capsule.sum_of,
         image: Buffer.from(capsule.image).toString('base64')
+      };
+    });
 
-      }));
-      res.json(capsules);
-    } catch (err) {
-      console.error('Error fetching users:', err);
-      res.status(500).send('Failed to fetch v');
-    }
+    res.json(capsules);
+  } catch (err) {
+    console.error('Error fetching capsules:', err);
+    res.status(500).send('Failed to fetch capsules');
+  }
 });
 
 app.put('/update-capsule/:id', upload.single('image'), async (req, res) => {
@@ -422,27 +487,59 @@ app.get('/get-milk-frother/:id', async (req, res) => {
     }
   });
 
+// app.get('/get-all-milk-frothers', async (req, res) => {
+//     try {
+//       const result = await pool.query('SELECT id, name, color, frothing_type, capacity, price, image, sum_of FROM milk_frothers');
+
+//       const milk_frothers = result.rows.map(milk_frother => ({
+//         id: milk_frother.id,
+//         name: milk_frother.name,
+//         color: milk_frother.color,
+//         frothing_type: milk_frother.frothing_type,
+//         capacity: milk_frother.capacity,
+//         price: milk_frother.price,
+//         sum_of:milk_frother.sum_of,
+//         image: Buffer.from(milk_frother.image).toString('base64')
+
+//       }));
+//       res.json(milk_frothers);
+//     } catch (err) {
+//       console.error('Error fetching milk frothers:', err);
+//       res.status(500).send('Failed to fetch milk frothers');
+//     }
+//   });
+
 app.get('/get-all-milk-frothers', async (req, res) => {
-    try {
-      const result = await pool.query('SELECT id, name, color, frothing_type, capacity, price, image, sum_of FROM milk_frothers');
+  try {
+    const currentDate = new Date();
 
-      const milk_frothers = result.rows.map(milk_frother => ({
-        id: milk_frother.id,
-        name: milk_frother.name,
-        color: milk_frother.color,
-        frothing_type: milk_frother.frothing_type,
-        capacity: milk_frother.capacity,
-        price: milk_frother.price,
-        sum_of:milk_frother.sum_of,
-        image: Buffer.from(milk_frother.image).toString('base64')
+    const [milkResult, pricePeriodsResult] = await Promise.all([
+      pool.query('SELECT id, name, color, frothing_type, capacity, price, image, sum_of FROM milk_frothers'),
+      pool.query('SELECT start_date, end_date, percentage_change FROM price_periods')
+    ]);
 
-      }));
-      res.json(milk_frothers);
-    } catch (err) {
-      console.error('Error fetching milk frothers:', err);
-      res.status(500).send('Failed to fetch milk frothers');
-    }
-  });
+    const pricePeriods = pricePeriodsResult.rows;
+
+    const milk_frothers = milkResult.rows.map(milk => {
+      const adjustedPrice = getAdjustedPrice(parseFloat(milk.price), currentDate, pricePeriods);
+      return {
+        id: milk.id,
+        name: milk.name,
+        color: milk.color,
+        frothing_type: milk.frothing_type,
+        capacity: milk.capacity,
+        price: adjustedPrice.toFixed(2),
+        sum_of: milk.sum_of,
+        image: Buffer.from(milk.image).toString('base64')
+      };
+    });
+
+    res.json(milk_frothers);
+  } catch (err) {
+    console.error('Error fetching milk frothers:', err);
+    res.status(500).send('Failed to fetch milk frothers');
+  }
+});
 
 app.put('/update-milk-frother/:id', upload.single('image'), async (req, res) => {
     const { id } = req.params;
@@ -651,5 +748,23 @@ app.delete('/delete-milk-frother/:id', async (req, res) => {
     }
   });
   
+function getAdjustedPrice(originalPrice, currentDate, pricePeriods) {
+  for (const period of pricePeriods) {
+    const start = new Date(period.start_date);
+    const end = new Date(period.end_date);
+
+    const currDate = new Date(currentDate);
+    currDate.setHours(0, 0, 0, 0);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+
+    if (currDate >= start && currDate <= end) {
+      const percentage = period.percentage_change;
+      return originalPrice + (originalPrice * (percentage / 100));
+    }
+  }
+  return originalPrice;
+}
+
   
 export default app;
