@@ -122,4 +122,85 @@ app.delete('/delete-coupon/:codename', async (req, res) => {
         res.status(500).json({ error: "Server error" });
     }
 });
+
+
+// Special periodes
+
+app.get('/get-price-periods', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM price_periods ORDER BY start_date');
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error("Error fetching price periods:", err);
+    res.status(500).json({ error: "Server error." });
+  }
+});
+
+app.post('/add-price-periods', async (req, res) => {
+  const { start_date, end_date, percentage_change } = req.body;
+    console.log("start_date:", start_date, "end_date:", end_date, "percentage_change:", percentage_change);
+
+
+  if (!start_date || !end_date || percentage_change === undefined) {
+    return res.status(400).json({ error: "All fields are required." });
+  }
+
+  try {
+    await pool.query(
+      `INSERT INTO price_periods (start_date, end_date, percentage_change)
+       VALUES ($1, $2, $3)`,
+      [start_date, end_date, percentage_change]
+    );
+        console.log("start_date:", start_date, "end_date:", end_date, "percentage_change:", percentage_change);
+
+    res.status(201).json({ message: "Price period added successfully!" });
+  } catch (err) {
+    console.error("Error adding price period:", err);
+    res.status(500).json({ error: "Server error." });
+  }
+});
+
+app.post('/update-price-period', async (req, res) => {
+  const { id, start_date, end_date, percentage_change } = req.body;
+  console.log("start_date:", start_date, "end_date:", end_date, "percentage_change:", percentage_change);
+
+  if (!id || !start_date || !end_date || percentage_change === undefined)
+    return res.status(400).send('Missing fields');
+
+  try {
+    await db.query(`
+      UPDATE price_periods
+      SET start_date = ?, end_date = ?, percentage_change = ?
+      WHERE id = ?
+    `, [start_date, end_date, percentage_change, id]);
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.error(err);
+    res.sendStatus(500);
+  }
+});
+
+app.delete('/delete-price-period/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query(
+      'DELETE FROM price_periods WHERE id = $1',
+      [id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Price period not found" });
+    }
+
+    res.status(200).json({ message: "Price period deleted successfully!" });
+  } catch (err) {
+    console.error("Error deleting price period:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+
+
 export default app;
