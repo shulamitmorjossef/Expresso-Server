@@ -220,6 +220,22 @@ const createShoppingCartTable = async () => {
   }
 };
 
+const createReviewsTable = async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS reviews (
+        id SERIAL PRIMARY KEY,
+        content TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    console.log("✅ Table 'reviews' created or already exists.");
+  } catch (err) {
+    console.error("❌ Error creating reviews table:", err);
+    throw err;
+  }
+};
+
 const initAllTables = async () => {
   try {
     await createUsersTable();
@@ -234,6 +250,7 @@ const initAllTables = async () => {
     await createOrdersTable();
     await createOrderedProductsTable();
     await createShoppingCartTable();
+    await createReviewsTable();
     // await createRUsersTable();
     console.log("✅ All tables initialized successfully.");
     process.exit(0);

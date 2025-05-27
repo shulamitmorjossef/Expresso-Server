@@ -110,6 +110,13 @@ CREATE TABLE IF NOT EXISTS shopping_cart (
 
 );
 
+CREATE TABLE IF NOT EXISTS reviews (
+  id SERIAL PRIMARY KEY,
+  content TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
 
 -- Insert values
 INSERT INTO about (title, section1, section2, section3, section4, section5)
