@@ -10,6 +10,8 @@ import deliveryDates from './routs/delivery_dates.js';
 import orders from './routs/orders.js';
 import shoppingCart from './routs/shopping_cart.js';
 import statistics from './routs/statistics.js';
+import reviews from './routs/reviews.js';
+
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -30,6 +32,7 @@ app.use(deliveryDates);
 app.use(orders);
 app.use(shoppingCart);
 app.use(statistics);
+app.use(reviews);
 
 
 

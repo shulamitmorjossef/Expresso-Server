@@ -27,7 +27,7 @@
     "multer": "^1.4.5-lts.2",
     "multer-storage-cloudinary": "^4.0.0",
     "nodemailer": "^7.0.2",
-    "pg": "^8.15.0"
+    "pg": "^8.16.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.1",
