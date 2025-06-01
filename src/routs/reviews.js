@@ -14,18 +14,23 @@ app.get('/reviews', async (req, res) => {
 });
 
 app.post('/reviews', async (req, res) => {
-console.log("Received POST /reviews");
-console.log("Request body:", req.body);
+  console.log("Received POST /reviews");
+  console.log("Request body:", req.body);
 
-  const { content } = req.body;
+  const { content, username } = req.body;
+
   if (!content || content.trim() === '') {
     return res.status(400).json({ error: 'Review content is required' });
   }
 
+  if (!username || username.trim() === '') {
+    return res.status(400).json({ error: 'Username is required' });
+  }
+
   try {
     const result = await pool.query(
-      'INSERT INTO reviews (content) VALUES ($1) RETURNING *',
-      [content.trim()]
+      'INSERT INTO reviews (content, username) VALUES ($1, $2) RETURNING *',
+      [content.trim(), username.trim()]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
