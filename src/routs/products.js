@@ -646,14 +646,49 @@ app.delete('/delete-milk-frother/:id', async (req, res) => {
       const q = `%${query}%`;
   
       const result = await pool.query(`
-        SELECT id, name, price, sum_of, image, 'coffee_machines' AS type
-          FROM coffee_machines WHERE name ILIKE $1
+        -- coffee_machines
+        SELECT 
+          id, name, price, sum_of, image,
+          color, capacity,
+          NULL::TEXT AS frothing_type,
+          NULL::TEXT AS flavor,
+          NULL::INT AS quantity_per_package,
+          NULL::NUMERIC AS net_weight_grams,
+          NULL::TEXT AS ingredients,
+          'coffee_machines' AS type
+        FROM coffee_machines
+        WHERE name ILIKE $1
+  
         UNION ALL
-        SELECT id, name, price, sum_of, image, 'capsules' AS type
-          FROM capsules WHERE name ILIKE $1
+  
+        -- capsules
+        SELECT 
+          id, name, price, sum_of, image,
+          NULL::TEXT AS color,
+          NULL::INT AS capacity,
+          NULL::TEXT AS frothing_type,
+          flavor,
+          quantity_per_package,
+          net_weight_grams,
+          ingredients,
+          'capsules' AS type
+        FROM capsules
+        WHERE name ILIKE $1
+  
         UNION ALL
-        SELECT id, name, price, sum_of, image, 'milk_frothers' AS type
-          FROM milk_frothers WHERE name ILIKE $1
+  
+        -- milk_frothers
+        SELECT 
+          id, name, price, sum_of, image,
+          color, capacity,
+          frothing_type,
+          NULL::TEXT AS flavor,
+          NULL::INT AS quantity_per_package,
+          NULL::NUMERIC AS net_weight_grams,
+          NULL::TEXT AS ingredients,
+          'milk_frothers' AS type
+        FROM milk_frothers
+        WHERE name ILIKE $1
       `, [q]);
   
       const products = result.rows.map(p => ({
@@ -663,10 +698,11 @@ app.delete('/delete-milk-frother/:id', async (req, res) => {
   
       res.json(products);
     } catch (err) {
-      console.error(' Error searching products:', err);
+      console.error('❌ Error searching products:', err);
       res.status(500).json({ error: 'Server error' });
     }
   });
+  
   
   
 
