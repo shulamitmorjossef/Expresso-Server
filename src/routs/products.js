@@ -749,16 +749,18 @@ app.delete('/delete-milk-frother/:id', async (req, res) => {
   });
   
 function getAdjustedPrice(originalPrice, currentDate, pricePeriods) {
+  console.log("Current Date:", currentDate);
   for (const period of pricePeriods) {
     const start = new Date(period.start_date);
     const end = new Date(period.end_date);
 
     const currDate = new Date(currentDate);
-    currDate.setHours(0, 0, 0, 0);
-    start.setHours(0, 0, 0, 0);
-    end.setHours(0, 0, 0, 0);
 
-    if (currDate >= start && currDate <= end) {
+
+    if (currDate.getDate() >= start.getDate() && currDate.getDate() <= end.getDate() &&
+        currDate.getMonth() >= start.getMonth() && currDate.getMonth() <= end.getMonth() &&
+        currDate.getFullYear() >= start.getFullYear() && currDate.getFullYear() <= end.getFullYear())
+         {
       const percentage = period.percentage_change;
       return originalPrice + (originalPrice * (percentage / 100));
     }

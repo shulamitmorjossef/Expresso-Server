@@ -78,8 +78,11 @@ app.post('/generate-birthday-coupon', async (req, res) => {
     }
 
     const { birthday, email } = userResult.rows[0];
+    console.log("User's birthday:", birthday.getDate(), "User's email:", email);
     const today = new Date();
+    console.log("Today's date:", today.getDate());
     const birthdayDate = new Date(birthday);
+    console.log("User's birthday date:", birthdayDate.getDate());
 
     if (
       birthdayDate.getDate() === today.getDate() &&
