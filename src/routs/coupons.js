@@ -78,11 +78,11 @@ app.post('/generate-birthday-coupon', async (req, res) => {
     }
 
     const { birthday, email } = userResult.rows[0];
-    console.log("User's birthday:", birthday.getDate(), "User's email:", email);
+    // console.log("User's birthday:", birthday.getDate(), "User's email:", email);
     const today = new Date();
-    console.log("Today's date:", today.getDate());
+    // console.log("Today's date:", today.getDate());
     const birthdayDate = new Date(birthday);
-    console.log("User's birthday date:", birthdayDate.getDate());
+    // console.log("User's birthday date:", birthdayDate.getDate());
 
     if (
       birthdayDate.getDate() === today.getDate() &&
@@ -141,7 +141,7 @@ app.get('/get-price-periods', async (req, res) => {
 
 app.post('/add-price-periods', async (req, res) => {
   const { start_date, end_date, percentage_change } = req.body;
-    console.log("start_date:", start_date, "end_date:", end_date, "percentage_change:", percentage_change);
+    // console.log("start_date:", start_date, "end_date:", end_date, "percentage_change:", percentage_change);
 
 
   if (!start_date || !end_date || percentage_change === undefined) {
@@ -154,7 +154,7 @@ app.post('/add-price-periods', async (req, res) => {
        VALUES ($1, $2, $3)`,
       [start_date, end_date, percentage_change]
     );
-        console.log("start_date:", start_date, "end_date:", end_date, "percentage_change:", percentage_change);
+        // console.log("start_date:", start_date, "end_date:", end_date, "percentage_change:", percentage_change);
 
     res.status(201).json({ message: "Price period added successfully!" });
   } catch (err) {
@@ -165,7 +165,7 @@ app.post('/add-price-periods', async (req, res) => {
 
 app.post('/update-price-period', async (req, res) => {
   const { id, start_date, end_date, percentage_change } = req.body;
-  console.log("start_date:", start_date, "end_date:", end_date, "percentage_change:", percentage_change);
+  // console.log("start_date:", start_date, "end_date:", end_date, "percentage_change:", percentage_change);
 
   if (!id || !start_date || !end_date || percentage_change === undefined)
     return res.status(400).send('Missing fields');

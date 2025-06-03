@@ -635,17 +635,170 @@ app.delete('/delete-milk-frother/:id', async (req, res) => {
 
   
   //  Search across all products by name prefix
-  app.get('/search-products', async (req, res) => {
-    const { query } = req.query;
+  // app.get('/search-products', async (req, res) => {
+  //   const { query } = req.query;
   
-    if (!query) {
-      return res.status(400).json({ error: 'Missing search term' });
-    }
+  //   if (!query) {
+  //     return res.status(400).json({ error: 'Missing search term' });
+  //   }
   
-    try {
-      const q = `%${query}%`;
+  //   try {
+  //     const q = `%${query}%`;
   
-      const result = await pool.query(`
+  //     const result = await pool.query(`
+  //       -- coffee_machines
+  //       SELECT 
+  //         id, name, price, sum_of, image,
+  //         color, capacity,
+  //         NULL::TEXT AS frothing_type,
+  //         NULL::TEXT AS flavor,
+  //         NULL::INT AS quantity_per_package,
+  //         NULL::NUMERIC AS net_weight_grams,
+  //         NULL::TEXT AS ingredients,
+  //         'coffee_machines' AS type
+  //       FROM coffee_machines
+  //       WHERE name ILIKE $1
+  
+  //       UNION ALL
+  
+  //       -- capsules
+  //       SELECT 
+  //         id, name, price, sum_of, image,
+  //         NULL::TEXT AS color,
+  //         NULL::INT AS capacity,
+  //         NULL::TEXT AS frothing_type,
+  //         flavor,
+  //         quantity_per_package,
+  //         net_weight_grams,
+  //         ingredients,
+  //         'capsules' AS type
+  //       FROM capsules
+  //       WHERE name ILIKE $1
+  
+  //       UNION ALL
+  
+  //       -- milk_frothers
+  //       SELECT 
+  //         id, name, price, sum_of, image,
+  //         color, capacity,
+  //         frothing_type,
+  //         NULL::TEXT AS flavor,
+  //         NULL::INT AS quantity_per_package,
+  //         NULL::NUMERIC AS net_weight_grams,
+  //         NULL::TEXT AS ingredients,
+  //         'milk_frothers' AS type
+  //       FROM milk_frothers
+  //       WHERE name ILIKE $1
+  //     `, [q]);
+  
+  //     const products = result.rows.map(p => ({
+  //       ...p,
+  //       image: p.image ? Buffer.from(p.image).toString('base64') : null
+  //     }));
+  
+  //     res.json(products);
+  //   } catch (err) {
+  //     console.error('❌ Error searching products:', err);
+  //     res.status(500).json({ error: 'Server error' });
+  //   }
+  // });
+  
+//   app.get('/search-products', async (req, res) => {
+//   const { query } = req.query;
+
+//   if (!query) {
+//     return res.status(400).json({ error: 'Missing search term' });
+//   }
+
+//   try {
+//     const q = `%${query}%`;
+//     const currentDate = new Date();
+
+//     const [result, pricePeriodsResult] = await Promise.all([
+//       pool.query(`
+//         -- coffee_machines
+//         SELECT 
+//           id, name, price, sum_of, image,
+//           color, capacity,
+//           NULL::TEXT AS frothing_type,
+//           NULL::TEXT AS flavor,
+//           NULL::INT AS quantity_per_package,
+//           NULL::NUMERIC AS net_weight_grams,
+//           NULL::TEXT AS ingredients,
+//           'coffee_machines' AS type
+//         FROM coffee_machines
+//         WHERE name ILIKE $1
+
+//         UNION ALL
+
+//         -- capsules
+//         SELECT 
+//           id, name, price, sum_of, image,
+//           NULL::TEXT AS color,
+//           NULL::INT AS capacity,
+//           NULL::TEXT AS frothing_type,
+//           flavor,
+//           quantity_per_package,
+//           net_weight_grams,
+//           ingredients,
+//           'capsules' AS type
+//         FROM capsules
+//         WHERE name ILIKE $1
+
+//         UNION ALL
+
+//         -- milk_frothers
+//         SELECT 
+//           id, name, price, sum_of, image,
+//           color, capacity,
+//           frothing_type,
+//           NULL::TEXT AS flavor,
+//           NULL::INT AS quantity_per_package,
+//           NULL::NUMERIC AS net_weight_grams,
+//           NULL::TEXT AS ingredients,
+//           'milk_frothers' AS type
+//         FROM milk_frothers
+//         WHERE name ILIKE $1
+//       `, [q]),
+//       pool.query(`SELECT start_date, end_date, percentage_change FROM price_periods`)
+//     ]);
+
+//     const pricePeriods = pricePeriodsResult.rows;
+
+//     const products = result.rows.map(p => {
+//       // רק על milk_frothers מחשבים מחיר מתוקן
+//       const adjustedPrice = (p.type === 'milk_frothers')
+//         ? getAdjustedPrice(parseFloat(p.price), currentDate, pricePeriods)
+//         : parseFloat(p.price);
+
+//       return {
+//         ...p,
+//         price: adjustedPrice.toFixed(2),
+//         image: p.image ? Buffer.from(p.image).toString('base64') : null
+//       };
+//     });
+
+//     res.json(products);
+//   } catch (err) {
+//     console.error('❌ Error searching products:', err);
+//     res.status(500).json({ error: 'Server error' });
+//   }
+// });
+
+
+app.get('/search-products', async (req, res) => {
+  const { query } = req.query;
+
+  if (!query) {
+    return res.status(400).json({ error: 'Missing search term' });
+  }
+
+  try {
+    const q = `%${query}%`;
+    const currentDate = new Date();
+
+    const [result, pricePeriodsResult] = await Promise.all([
+      pool.query(`
         -- coffee_machines
         SELECT 
           id, name, price, sum_of, image,
@@ -658,9 +811,9 @@ app.delete('/delete-milk-frother/:id', async (req, res) => {
           'coffee_machines' AS type
         FROM coffee_machines
         WHERE name ILIKE $1
-  
+
         UNION ALL
-  
+
         -- capsules
         SELECT 
           id, name, price, sum_of, image,
@@ -674,9 +827,9 @@ app.delete('/delete-milk-frother/:id', async (req, res) => {
           'capsules' AS type
         FROM capsules
         WHERE name ILIKE $1
-  
+
         UNION ALL
-  
+
         -- milk_frothers
         SELECT 
           id, name, price, sum_of, image,
@@ -689,21 +842,29 @@ app.delete('/delete-milk-frother/:id', async (req, res) => {
           'milk_frothers' AS type
         FROM milk_frothers
         WHERE name ILIKE $1
-      `, [q]);
-  
-      const products = result.rows.map(p => ({
+      `, [q]),
+      pool.query(`SELECT start_date, end_date, percentage_change FROM price_periods`)
+    ]);
+
+    const pricePeriods = pricePeriodsResult.rows;
+
+    const products = result.rows.map(p => {
+      const adjustedPrice = getAdjustedPrice(parseFloat(p.price), currentDate, pricePeriods);
+
+      return {
         ...p,
+        price: adjustedPrice.toFixed(2),
         image: p.image ? Buffer.from(p.image).toString('base64') : null
-      }));
-  
-      res.json(products);
-    } catch (err) {
-      console.error('❌ Error searching products:', err);
-      res.status(500).json({ error: 'Server error' });
-    }
-  });
-  
-  
+      };
+    });
+
+    res.json(products);
+  } catch (err) {
+    console.error('❌ Error searching products:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
   
 
   app.get('/capsules-by-popularity', async (req, res) => {
@@ -785,7 +946,7 @@ app.delete('/delete-milk-frother/:id', async (req, res) => {
   });
   
 function getAdjustedPrice(originalPrice, currentDate, pricePeriods) {
-  console.log("Current Date:", currentDate);
+  // console.log("Current Date:", currentDate);
   for (const period of pricePeriods) {
     const start = new Date(period.start_date);
     const end = new Date(period.end_date);

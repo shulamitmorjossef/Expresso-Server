@@ -57,7 +57,7 @@ router.get('/total-sold', async (req, res) => {
     const raw = result.rows[0].totalsold;               // Postgres מחזיר SUM כמחרוזת או null
     const total = raw !== null ? Number(raw) : 0;       // אם null → 0, אחרת המרה ל-number
 
-    console.log('Result rows[0]:', result.rows[0], 'parsed totalSold:', total);
+    // console.log('Result rows[0]:', result.rows[0], 'parsed totalSold:', total);
     res.json({ totalSold: total });
 
   } catch (err) {
