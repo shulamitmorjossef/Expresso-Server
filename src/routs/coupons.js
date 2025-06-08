@@ -171,10 +171,15 @@ app.post('/update-price-period', async (req, res) => {
     return res.status(400).send('Missing fields');
 
   try {
-    await db.query(`
+    console.log("Updating price period with ID:", id);
+    console.log("New start_date:", start_date);
+    console.log("New end_date:", end_date);
+    console.log("New percentage_change:", percentage_change);
+
+    await pool.query(`
       UPDATE price_periods
-      SET start_date = ?, end_date = ?, percentage_change = ?
-      WHERE id = ?
+      SET start_date = $1, end_date = $2, percentage_change = $3
+      WHERE id = $4
     `, [start_date, end_date, percentage_change, id]);
 
     res.sendStatus(200);

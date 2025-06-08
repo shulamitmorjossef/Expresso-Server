@@ -944,6 +944,19 @@ app.get('/search-products', async (req, res) => {
       res.status(500).json({ error: "Server error" });
     }
   });
+
+
+
+app.delete('/delete-all-specials', async (req, res) => {
+  try {
+    const result = await pool.query("DELETE FROM price_periods");
+    res.json({ message: "All specials deleted" });
+  } catch (err) {
+    console.error("Error deleting specials:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
   
 function getAdjustedPrice(originalPrice, currentDate, pricePeriods) {
   // console.log("Current Date:", currentDate);
@@ -964,6 +977,8 @@ function getAdjustedPrice(originalPrice, currentDate, pricePeriods) {
   }
   return originalPrice;
 }
+
+
 
   
 export default app;
